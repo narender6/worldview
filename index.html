@@ -528,10 +528,8 @@ function setLoad(pct, text) {
 // CESIUM INIT
 // ================================================================
 function initCesium() {
-  Cesium.Ion.defaultAccessToken = CFG.CESIUM_TOKEN;
-
   viewer = new Cesium.Viewer('cesiumContainer', {
-    terrain:              Cesium.Terrain.fromWorldTerrain(),
+    terrainProvider:      new Cesium.EllipsoidTerrainProvider(),
     timeline:             false,
     animation:            false,
     baseLayerPicker:      false,
@@ -544,11 +542,20 @@ function initCesium() {
     selectionIndicator:   false,
   });
 
-  // Remove default imagery, add high-res satellite
+  // ESRI World Imagery — free, no API key required
   viewer.imageryLayers.removeAll();
   viewer.imageryLayers.addImageryProvider(
-    new Cesium.IonImageryProvider({ assetId: 3 }) // Bing Aerial
+    new Cesium.UrlTemplateImageryProvider({
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      maximumLevel: 19,
+      credit: 'ESRI World Imagery',
+    })
   );
+
+  // Try to upgrade to ArcGIS terrain (free, no key)
+  Cesium.ArcGISTiledElevationTerrainProvider.fromUrl(
+    'https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer'
+  ).then(tp => viewer.terrainProvider = tp).catch(() => {});
 
   viewer.scene.globe.enableLighting = true;
   viewer.scene.atmosphere.show = true;
