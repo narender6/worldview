@@ -1,0 +1,24 @@
+{
+  "name": "worldview",
+  "version": "1.0.0",
+  "description": "Spatial intelligence platform — spy satellite simulator in the browser",
+  "scripts": {
+    "dev": "serve . -p 8080 --cors",
+    "start": "serve . -p 8080 --cors"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/narender6/worldview.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/narender6/worldview/issues"
+  },
+  "homepage": "https://github.com/narender6/worldview#readme",
+  "devDependencies": {
+    "serve": "^14.2.6"
+  }
+}
