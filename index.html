@@ -528,8 +528,14 @@ function setLoad(pct, text) {
 // CESIUM INIT
 // ================================================================
 function initCesium() {
+  // Blank out Ion token so CesiumJS never attempts Ion requests
+  Cesium.Ion.defaultAccessToken = '';
+
   viewer = new Cesium.Viewer('cesiumContainer', {
     terrainProvider:      new Cesium.EllipsoidTerrainProvider(),
+    baseLayer:            false,   // skip default Ion imagery layer
+    skyBox:               false,   // skip Ion skybox (asset 2)
+    skyAtmosphere:        false,   // skip Ion atmosphere
     timeline:             false,
     animation:            false,
     baseLayerPicker:      false,
@@ -558,7 +564,6 @@ function initCesium() {
   ).then(tp => viewer.terrainProvider = tp).catch(() => {});
 
   viewer.scene.globe.enableLighting = true;
-  viewer.scene.atmosphere.show = true;
   viewer.scene.fog.enabled = true;
   viewer.scene.highDynamicRange = false;
 
