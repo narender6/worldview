@@ -582,6 +582,19 @@ const GLSL = {
 // STATE
 // ================================================================
 let viewer, shaderStages = {};
+
+// ── SVG billboard icon helper ──────────────────────────────────
+function svgIcon(emoji, size = 22) {
+  const s = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><text x="50%" y="54%" dominant-baseline="central" text-anchor="middle" font-size="${Math.round(size*0.85)}">${emoji}</text></svg>`;
+  return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(s)));
+}
+const ICONS = {
+  aircraft:  svgIcon('✈', 22),
+  satellite: svgIcon('🛰', 18),
+  cctv:      svgIcon('📷', 16),
+  vehicle:   svgIcon('🚗', 12),
+  milSat:    svgIcon('⚠️', 18),
+};
 let currentMode  = 'normal';
 let godModeOn    = false;
 let aircraftMap  = {};
@@ -707,24 +720,23 @@ function updateAircraftEntities(states) {
         id:   'ac_' + id,
         name: cs,
         position: pos,
-        point: {
-          pixelSize: 5,
-          color: Cesium.Color.CYAN,
-          outlineColor: Cesium.Color.fromCssColorString('#004433'),
-          outlineWidth: 1,
-          scaleByDistance: new Cesium.NearFarScalar(1e4, 2.0, 1e7, 0.6),
-          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        billboard: {
+          image: ICONS.aircraft,
+          width: 22, height: 22,
+          scaleByDistance: new Cesium.NearFarScalar(5e4, 1.4, 8e6, 0.4),
+          disableDepthTestDistance: 5e6,
+          verticalOrigin: Cesium.VerticalOrigin.CENTER,
         },
         label: {
-          text: cs.substring(0, 10),
-          font: '9px Courier New',
-          fillColor: Cesium.Color.CYAN,
+          text: cs.substring(0, 8),
+          font: '11px Inter, system-ui',
+          fillColor: Cesium.Color.fromCssColorString('#38bdf8'),
           outlineColor: Cesium.Color.BLACK,
-          outlineWidth: 2,
+          outlineWidth: 3,
           style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-          pixelOffset: new Cesium.Cartesian2(10, -6),
-          scaleByDistance: new Cesium.NearFarScalar(1e4, 1.0, 2e6, 0.0),
-          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          pixelOffset: new Cesium.Cartesian2(14, -2),
+          scaleByDistance: new Cesium.NearFarScalar(5e4, 1.0, 2e6, 0.0),
+          disableDepthTestDistance: 5e6,
         },
         properties: {
           entityType: 'aircraft',
@@ -765,23 +777,22 @@ function loadDemoAircraft() {
       id: 'ac_' + f.id,
       name: f.cs,
       position: Cesium.Cartesian3.fromDegrees(f.lon, f.lat, f.alt),
-      point: {
-        pixelSize: 5,
-        color: Cesium.Color.CYAN.withAlpha(0.8),
-        outlineColor: Cesium.Color.fromCssColorString('#003322'),
-        outlineWidth: 1,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      billboard: {
+        image: ICONS.aircraft,
+        width: 22, height: 22,
+        scaleByDistance: new Cesium.NearFarScalar(5e4, 1.4, 8e6, 0.4),
+        disableDepthTestDistance: 5e6,
       },
       label: {
         text: f.cs,
-        font: '9px Courier New',
-        fillColor: Cesium.Color.CYAN,
+        font: '11px Inter, system-ui',
+        fillColor: Cesium.Color.fromCssColorString('#38bdf8'),
         outlineColor: Cesium.Color.BLACK,
-        outlineWidth: 2,
+        outlineWidth: 3,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-        pixelOffset: new Cesium.Cartesian2(10, -6),
-        scaleByDistance: new Cesium.NearFarScalar(1e4, 1.0, 2e6, 0.0),
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        pixelOffset: new Cesium.Cartesian2(14, -2),
+        scaleByDistance: new Cesium.NearFarScalar(5e4, 1.0, 2e6, 0.0),
+        disableDepthTestDistance: 5e6,
       },
       properties: {
         entityType: 'aircraft',
@@ -885,24 +896,22 @@ function propagateSatellites() {
           id,
           name: sat.name,
           position: Cesium.Cartesian3.fromDegrees(lon, lat, alt),
-          point: {
-            pixelSize: 3,
-            color,
-            outlineColor: Cesium.Color.WHITE.withAlpha(0.3),
-            outlineWidth: 0.5,
-            scaleByDistance: new Cesium.NearFarScalar(1e5, 2.5, 1e8, 0.4),
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          billboard: {
+            image: isMil ? ICONS.milSat : ICONS.satellite,
+            width: 18, height: 18,
+            scaleByDistance: new Cesium.NearFarScalar(5e5, 1.4, 2e7, 0.3),
+            disableDepthTestDistance: 2e7,
           },
           label: {
-            text: sat.name.substring(0, 14),
-            font: '8px Courier New',
+            text: sat.name.substring(0, 12),
+            font: '10px Inter, system-ui',
             fillColor: color,
             outlineColor: Cesium.Color.BLACK,
-            outlineWidth: 1,
+            outlineWidth: 2,
             style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-            pixelOffset: new Cesium.Cartesian2(8, -5),
-            scaleByDistance: new Cesium.NearFarScalar(5e4, 1.0, 5e6, 0.0),
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+            pixelOffset: new Cesium.Cartesian2(12, -2),
+            scaleByDistance: new Cesium.NearFarScalar(5e5, 1.0, 5e6, 0.0),
+            disableDepthTestDistance: 2e7,
           },
           properties: {
             entityType: 'satellite',
@@ -936,26 +945,25 @@ function addCCTVMarkers() {
       id:   'cctv_' + cam.name,
       name: cam.name,
       position: Cesium.Cartesian3.fromDegrees(cam.lon, cam.lat, 20),
-      point: {
-        pixelSize: 7,
-        color: Cesium.Color.fromCssColorString('#cc00ff'),
-        outlineColor: Cesium.Color.WHITE,
-        outlineWidth: 1,
+      billboard: {
+        image: ICONS.cctv,
+        width: 18, height: 18,
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-        scaleByDistance: new Cesium.NearFarScalar(500, 2.0, 5e5, 0.4),
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        scaleByDistance: new Cesium.NearFarScalar(500, 1.8, 2e5, 0.3),
+        disableDepthTestDistance: 1e6,
+        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
       },
       label: {
-        text: cam.name.split(':')[0],
-        font: '8px Courier New',
-        fillColor: Cesium.Color.fromCssColorString('#cc00ff'),
+        text: cam.name.split(':')[1]?.trim() || cam.name,
+        font: '11px Inter, system-ui',
+        fillColor: Cesium.Color.fromCssColorString('#c084fc'),
         outlineColor: Cesium.Color.BLACK,
-        outlineWidth: 1,
+        outlineWidth: 3,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-        pixelOffset: new Cesium.Cartesian2(10, -5),
+        pixelOffset: new Cesium.Cartesian2(14, -2),
         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-        scaleByDistance: new Cesium.NearFarScalar(500, 1.0, 1e5, 0.0),
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        scaleByDistance: new Cesium.NearFarScalar(500, 1.0, 5e4, 0.0),
+        disableDepthTestDistance: 1e6,
       },
       properties: { entityType: 'cctv', camName: cam.name }
     });
@@ -1059,12 +1067,10 @@ function toggleGodMode() {
     reticle.style.display = 'block';
 
     Object.values(aircraftMap).forEach(e => {
-      e.point.color   = Cesium.Color.RED;
-      e.point.pixelSize = 9;
+      if (e.billboard) e.billboard.color = Cesium.Color.RED;
     });
     Object.values(satelliteMap).forEach(e => {
-      e.point.color   = Cesium.Color.ORANGE;
-      e.point.pixelSize = 6;
+      if (e.billboard) e.billboard.color = Cesium.Color.fromCssColorString('#ff6600');
     });
 
     const ac  = Object.keys(aircraftMap).length;
@@ -1076,13 +1082,10 @@ function toggleGodMode() {
     reticle.style.display = 'none';
 
     Object.values(aircraftMap).forEach(e => {
-      e.point.color   = Cesium.Color.CYAN;
-      e.point.pixelSize = 5;
+      if (e.billboard) e.billboard.color = Cesium.Color.WHITE;
     });
     Object.values(satelliteMap).forEach(e => {
-      const mil = e.properties.isMilitary?.getValue();
-      e.point.color   = mil ? Cesium.Color.RED : Cesium.Color.YELLOW;
-      e.point.pixelSize = 3;
+      if (e.billboard) e.billboard.color = Cesium.Color.WHITE;
     });
   }
 }
