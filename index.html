@@ -4,364 +4,190 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WorldView — Spatial Intelligence</title>
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-
-<!-- CesiumJS -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
-
-<!-- satellite.js for TLE orbital propagation -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.1.4/satellite.min.js"></script>
-
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-:root {
-  --glass: rgba(10, 12, 20, 0.78);
-  --border: rgba(255,255,255,0.08);
-  --accent: #2dd4bf;
-  --text: #e2e8f0;
-  --muted: rgba(226,232,240,0.45);
-  --aircraft: #38bdf8;
-  --satellite: #fbbf24;
-  --cctv: #c084fc;
-  --danger: #f87171;
-  --radius: 10px;
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:rgba(8,10,18,0.9);
+  --bg2:rgba(12,14,24,0.95);
+  --border:rgba(255,255,255,0.07);
+  --text:#e2e8f0;
+  --muted:rgba(148,163,184,0.65);
+  --accent:#2dd4bf;
+  --r:9px;
+  --panel:210px;
+  /* entity colors */
+  --c-civ:#38bdf8;
+  --c-mil:#f59e0b;
+  --c-vip:#a78bfa;
+  --c-war:#ef4444;
+  --c-tanker:#f97316;
+  --c-cargo:#84cc16;
+  --c-pass:#22d3ee;
+  --c-sat:#fbbf24;
+  --c-cctv:#c084fc;
+  --c-zone:#ef4444;
 }
-
-body {
-  background: #000;
-  font-family: 'Inter', system-ui, sans-serif;
-  overflow: hidden;
-  color: var(--text);
-}
-
-#cesiumContainer { width: 100vw; height: 100vh; }
-.cesium-widget-credits, .cesium-viewer-bottom { display: none !important; }
+body{background:#000;font-family:'Inter',system-ui,sans-serif;overflow:hidden;color:var(--text);}
+#cesiumContainer{width:100vw;height:100vh;}
+.cesium-widget-credits,.cesium-viewer-bottom{display:none!important;}
 
 /* ── TOP BAR ── */
-#topbar {
-  position: absolute;
-  top: 16px; left: 16px; right: 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  pointer-events: none;
-  z-index: 100;
+#topbar{
+  position:absolute;top:12px;left:12px;right:12px;
+  display:flex;align-items:center;gap:8px;
+  pointer-events:none;z-index:100;
+}
+.logo{
+  background:var(--bg);backdrop-filter:blur(14px);
+  border:1px solid var(--border);border-radius:var(--r);
+  padding:7px 14px;font-size:12px;font-weight:700;
+  letter-spacing:4px;color:var(--accent);text-transform:uppercase;
+  flex-shrink:0;
+}
+.coord-pill{
+  background:var(--bg);backdrop-filter:blur(14px);
+  border:1px solid var(--border);border-radius:var(--r);
+  padding:7px 12px;font-size:10px;font-family:'Courier New',monospace;
+  color:var(--muted);display:flex;gap:10px;
+}
+.coord-pill span{color:var(--text);}
+#modeTag{
+  margin-left:auto;background:var(--bg);backdrop-filter:blur(14px);
+  border:1px solid var(--border);border-radius:var(--r);
+  padding:7px 12px;font-size:11px;font-weight:500;color:var(--accent);
 }
 
-.logo {
-  background: var(--glass);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 3px;
-  color: var(--accent);
-  text-transform: uppercase;
+/* ── LEFT PANEL ── */
+#leftPanel{
+  position:absolute;top:52px;left:12px;bottom:12px;
+  width:var(--panel);
+  display:flex;flex-direction:column;gap:6px;
+  z-index:100;overflow-y:auto;
+  scrollbar-width:none;
+}
+#leftPanel::-webkit-scrollbar{display:none;}
+
+.card{
+  background:var(--bg);backdrop-filter:blur(14px);
+  border:1px solid var(--border);border-radius:var(--r);
+  padding:10px 11px;flex-shrink:0;
+}
+.card-hdr{
+  font-size:9px;font-weight:700;letter-spacing:2.5px;
+  text-transform:uppercase;color:var(--muted);
+  margin-bottom:8px;
 }
 
-.coord-pill {
-  background: var(--glass);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 8px 14px;
-  font-size: 11px;
-  font-family: 'Courier New', monospace;
-  color: var(--muted);
-  display: flex;
-  gap: 14px;
+/* Display mode buttons */
+.disp-btn{
+  display:block;width:100%;text-align:left;
+  background:transparent;border:none;border-radius:6px;
+  color:var(--muted);padding:5px 8px;font-size:12px;
+  font-family:'Inter',system-ui,sans-serif;
+  cursor:pointer;transition:all 0.15s;margin-bottom:2px;
 }
+.disp-btn:hover{background:rgba(255,255,255,0.05);color:var(--text);}
+.disp-btn.active{background:rgba(45,212,191,0.12);color:var(--accent);}
+.disp-btn.god-on{background:rgba(239,68,68,0.15);color:#f87171;
+  animation:gp 2s ease-in-out infinite;}
+@keyframes gp{0%,100%{background:rgba(239,68,68,0.12);}50%{background:rgba(239,68,68,0.24);}}
 
-.coord-pill span { color: var(--text); }
-
-#modeDisplay {
-  margin-left: auto;
-  background: var(--glass);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 8px 14px;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--accent);
-  letter-spacing: 1px;
+/* Toggle rows */
+.tog{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:5px;cursor:pointer;
 }
+.tog:last-child{margin-bottom:0;}
+.tog-label{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);}
+.tog-label span{font-size:13px;}
+.tog-count{font-size:10px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;}
+.tog input[type=checkbox]{display:none;}
+.sw{width:28px;height:16px;border-radius:8px;background:rgba(255,255,255,0.1);
+  position:relative;transition:background 0.2s;flex-shrink:0;}
+.sw::after{content:'';position:absolute;top:2px;left:2px;
+  width:12px;height:12px;border-radius:50%;background:#fff;
+  transition:transform 0.2s;}
+.tog input:checked + .sw{background:var(--accent);}
+.tog input:checked + .sw::after{transform:translateX(12px);}
 
-/* ── SIDEBAR ── */
-#sidebar {
-  position: absolute;
-  top: 70px; right: 16px;
-  width: 240px;
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+/* SITREP */
+.sr-row{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:5px;font-size:11px;
 }
+.sr-row:last-child{margin-bottom:0;}
+.sr-label{color:var(--muted);display:flex;align-items:center;gap:5px;}
+.sr-val{font-weight:600;font-variant-numeric:tabular-nums;font-size:12px;}
 
-#sidebar.hidden {
-  transform: translateX(260px);
-  opacity: 0;
-  pointer-events: none;
+/* ── RIGHT INTEL PANEL ── */
+#intelPanel{
+  position:absolute;top:52px;right:12px;
+  width:220px;z-index:100;
+  display:flex;flex-direction:column;gap:6px;
+  transition:transform 0.28s,opacity 0.28s;
 }
+#intelPanel.hidden{transform:translateX(240px);opacity:0;pointer-events:none;}
+.clock-text{font-size:10px;font-family:'Courier New',monospace;color:var(--muted);line-height:1.8;}
 
-.card {
-  background: var(--glass);
-  backdrop-filter: blur(14px);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px;
+#toggleIntel{
+  position:absolute;top:52px;right:12px;z-index:101;
+  width:32px;height:32px;border-radius:7px;
+  background:var(--bg);backdrop-filter:blur(14px);
+  border:1px solid var(--border);cursor:pointer;
+  pointer-events:all;display:flex;align-items:center;
+  justify-content:center;color:var(--muted);font-size:15px;
+  transition:color 0.2s;
 }
+#toggleIntel:hover{color:var(--text);}
+#intelPanel:not(.hidden) ~ #toggleIntel{right:244px;}
 
-.card-title {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 12px;
-}
-
-.stat-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.stat-row:last-child { margin-bottom: 0; }
-
-.stat-label {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.dot-live { background: #22c55e; box-shadow: 0 0 5px #22c55e; animation: blink 2s ease-in-out infinite; }
-.dot-ac   { background: var(--aircraft); }
-.dot-sat  { background: var(--satellite); }
-.dot-cctv { background: var(--cctv); }
-
-@keyframes blink {
-  0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
-}
-
-.stat-value {
-  font-size: 13px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--text);
-}
-
-/* Intel card */
-#targetCard {
-  transition: opacity 0.2s;
-}
-
-#targetInfo {
-  font-size: 12px;
-  color: var(--muted);
-  line-height: 1.8;
-}
-
-#targetInfo .t-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 4px;
-  display: block;
-}
-
-/* Clock */
-#clock {
-  font-size: 11px;
-  font-family: 'Courier New', monospace;
-  color: var(--muted);
-  line-height: 1.7;
-}
-
-/* ── SIDEBAR TOGGLE ── */
-#sidebarToggle {
-  position: absolute;
-  top: 70px; right: 16px;
-  z-index: 101;
-  width: 36px; height: 36px;
-  background: var(--glass);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  cursor: pointer;
-  pointer-events: all;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  font-size: 16px;
-  transition: color 0.2s;
-}
-
-#sidebarToggle:hover { color: var(--text); }
-#sidebar:not(.hidden) ~ #sidebarToggle,
-#sidebarToggle.open { right: 268px; }
-
-/* ── MODE SWITCHER ── */
-#controls {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 4px;
-  z-index: 100;
-  pointer-events: all;
-  background: var(--glass);
-  backdrop-filter: blur(14px);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 6px;
-}
-
-.mode-btn {
-  background: transparent;
-  border: none;
-  border-radius: 10px;
-  color: var(--muted);
-  padding: 8px 16px;
-  font-family: 'Inter', system-ui, sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.18s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-
-.mode-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
-
-.mode-btn.active {
-  background: rgba(45, 212, 191, 0.15);
-  color: var(--accent);
-}
-
-.mode-btn.god-on {
-  background: rgba(248,113,113,0.15);
-  color: var(--danger);
-  animation: godPulse 2s ease-in-out infinite;
-}
-
-@keyframes godPulse {
-  0%, 100% { background: rgba(248,113,113,0.12); }
-  50%       { background: rgba(248,113,113,0.25); }
-}
+.t-name{font-size:13px;font-weight:600;color:var(--text);display:block;margin-bottom:5px;}
+#targetInfo{font-size:11px;color:var(--muted);line-height:1.85;}
 
 /* ── OVERLAYS ── */
-#overlay-scanlines {
-  position: absolute; inset: 0; pointer-events: none; display: none;
-  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px);
-}
-#overlay-vignette-nvg {
-  position: absolute; inset: 0; pointer-events: none; display: none;
-  background: radial-gradient(ellipse at center, transparent 52%, rgba(0,15,0,0.9) 100%);
-}
-#overlay-anime {
-  position: absolute; inset: 0; pointer-events: none; display: none;
-  border: 8px solid rgba(255,150,200,0.2);
-  box-shadow: inset 0 0 60px rgba(255,100,180,0.07);
-}
+#ol-scan{position:absolute;inset:0;pointer-events:none;display:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.14) 2px,rgba(0,0,0,0.14) 4px);}
+#ol-nvg{position:absolute;inset:0;pointer-events:none;display:none;
+  background:radial-gradient(ellipse at center,transparent 50%,rgba(0,14,0,0.92) 100%);}
+#ol-anime{position:absolute;inset:0;pointer-events:none;display:none;
+  border:8px solid rgba(255,150,200,0.18);box-shadow:inset 0 0 60px rgba(255,100,180,0.06);}
+#ol-tactical{position:absolute;inset:0;pointer-events:none;display:none;
+  background:
+    repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(0,255,150,0.04) 40px),
+    repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(0,255,150,0.04) 40px);}
 
-/* ── RETICLE ── */
-#reticle {
-  position: absolute; top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  display: none; pointer-events: none;
-}
+/* Reticle */
+#reticle{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:none;pointer-events:none;}
 
-/* ── NOTIFICATION ── */
-.notif {
-  position: absolute;
-  top: 70px; left: 50%;
-  transform: translateX(-50%);
-  background: var(--glass);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text);
-  padding: 10px 20px;
-  font-size: 12px;
-  font-weight: 500;
-  animation: notifAnim 3s forwards;
-  white-space: nowrap;
-  z-index: 200;
+/* Notifications */
+.notif{
+  position:absolute;top:56px;left:50%;transform:translateX(-50%);
+  background:var(--bg2);backdrop-filter:blur(12px);
+  border:1px solid var(--border);border-radius:8px;
+  color:var(--text);padding:9px 18px;font-size:12px;font-weight:500;
+  animation:na 3.2s forwards;white-space:nowrap;z-index:200;
 }
-.notif.red { border-color: rgba(248,113,113,0.4); color: var(--danger); }
+.notif.red{border-color:rgba(239,68,68,0.4);color:#f87171;}
+@keyframes na{0%{opacity:0;transform:translateX(-50%) translateY(-6px);}
+12%{opacity:1;transform:translateX(-50%) translateY(0);}75%{opacity:1;}100%{opacity:0;}}
 
-@keyframes notifAnim {
-  0%   { opacity: 0; transform: translateX(-50%) translateY(-6px); }
-  15%  { opacity: 1; transform: translateX(-50%) translateY(0); }
-  70%  { opacity: 1; }
-  100% { opacity: 0; }
+/* Loading */
+#loading{
+  position:absolute;inset:0;background:#050810;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;z-index:999;gap:16px;
 }
-
-/* ── LOADING ── */
-#loading {
-  position: absolute; inset: 0;
-  background: #050810;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  z-index: 999;
-  gap: 20px;
-}
-
-.load-logo {
-  font-size: 32px;
-  font-weight: 600;
-  letter-spacing: 8px;
-  color: var(--accent);
-  text-shadow: 0 0 30px rgba(45,212,191,0.5);
-}
-
-.load-sub {
-  font-size: 11px;
-  color: var(--muted);
-  letter-spacing: 2px;
-  text-transform: uppercase;
-}
-
-.load-bar-wrap {
-  width: 220px; height: 2px;
-  background: rgba(255,255,255,0.06);
-  border-radius: 2px; overflow: hidden;
-}
-
-.load-bar {
-  height: 100%;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
-  width: 0%; transition: width 0.4s ease;
-}
-
-.load-status {
-  font-size: 11px;
-  color: var(--muted);
-  letter-spacing: 1px;
-  min-height: 18px;
-}
+.load-logo{font-size:30px;font-weight:700;letter-spacing:8px;color:var(--accent);
+  text-shadow:0 0 30px rgba(45,212,191,0.5);}
+.load-sub{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.load-bar-wrap{width:200px;height:2px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;}
+.load-bar{height:100%;background:var(--accent);box-shadow:0 0 8px var(--accent);width:0%;transition:width 0.3s ease;}
+.load-st{font-size:10px;color:var(--muted);min-height:16px;}
 </style>
 </head>
 <body>
@@ -371,909 +197,1058 @@ body {
   <div class="load-logo">WORLDVIEW</div>
   <div class="load-sub">Spatial Intelligence Platform</div>
   <div class="load-bar-wrap"><div class="load-bar" id="loadBar"></div></div>
-  <div class="load-status" id="loadStatus">Initializing...</div>
+  <div class="load-st" id="loadSt">Initializing...</div>
 </div>
 
 <div id="cesiumContainer"></div>
 
-<!-- HUD -->
-<div id="hud" style="position:absolute;inset:0;pointer-events:none;z-index:100;">
+<!-- ── TOP BAR ── -->
+<div id="topbar">
+  <div class="logo">WorldView</div>
+  <div class="coord-pill">
+    <span id="coordDisplay">—</span>
+    <span id="altDisplay">—</span>
+  </div>
+  <div id="modeTag">◈ Standard</div>
+</div>
 
-  <!-- Top bar -->
-  <div id="topbar">
-    <div class="logo">WorldView</div>
-    <div class="coord-pill">
-      <span id="coordDisplay">—</span>
-      <span id="altDisplay">—</span>
-    </div>
-    <div id="modeDisplay">Standard</div>
+<!-- ── LEFT PANEL ── -->
+<div id="leftPanel">
+
+  <!-- DISPLAY -->
+  <div class="card">
+    <div class="card-hdr">Display</div>
+    <button class="disp-btn active" id="btn-normal"   onclick="setMode('normal')">◈ Normal</button>
+    <button class="disp-btn"        id="btn-nvg"      onclick="setMode('nvg')">🟢 Night Vision</button>
+    <button class="disp-btn"        id="btn-flir"     onclick="setMode('flir')">🔴 FLIR Thermal</button>
+    <button class="disp-btn"        id="btn-crt"      onclick="setMode('crt')">📺 CRT</button>
+    <button class="disp-btn"        id="btn-anime"    onclick="setMode('anime')">✨ Anime</button>
+    <button class="disp-btn"        id="btn-tactical" onclick="setMode('tactical')">🔵 Tactical</button>
+    <div style="border-top:1px solid var(--border);margin:6px 0;"></div>
+    <button class="disp-btn" id="btn-god" onclick="toggleGodMode()">⚡ God Mode</button>
   </div>
 
-  <!-- Sidebar -->
-  <div id="sidebar">
-
-    <!-- Live stats -->
-    <div class="card">
-      <div class="card-title">Live Data</div>
-      <div class="stat-row">
-        <span class="stat-label"><span class="dot dot-live"></span> Feed</span>
-        <span class="stat-value" id="lastUpdate" style="font-size:11px;color:var(--muted)">—</span>
+  <!-- AIRCRAFT -->
+  <div class="card">
+    <div class="card-hdr">✈ Aircraft</div>
+    <label class="tog" title="Military aircraft">
+      <span class="tog-label"><span>🎖️</span> Military</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="tog-count" id="cnt-mil-ac">0</span>
+        <input type="checkbox" id="tog-mil-ac" checked onchange="toggleLayer('mil_ac',this.checked)"><div class="sw"></div>
       </div>
-      <div class="stat-row">
-        <span class="stat-label"><span class="dot dot-ac"></span> Aircraft</span>
-        <span class="stat-value" id="aircraftCount">—</span>
+    </label>
+    <label class="tog" title="VIP / Government aircraft">
+      <span class="tog-label"><span>⭐</span> VIP</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="tog-count" id="cnt-vip-ac">0</span>
+        <input type="checkbox" id="tog-vip-ac" checked onchange="toggleLayer('vip_ac',this.checked)"><div class="sw"></div>
       </div>
-      <div class="stat-row">
-        <span class="stat-label"><span class="dot dot-sat"></span> Satellites</span>
-        <span class="stat-value" id="satelliteCount">—</span>
+    </label>
+    <label class="tog" title="Commercial civilian aircraft">
+      <span class="tog-label"><span>✈</span> Civilian</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="tog-count" id="cnt-civ-ac">0</span>
+        <input type="checkbox" id="tog-civ-ac" checked onchange="toggleLayer('civ_ac',this.checked)"><div class="sw"></div>
       </div>
-      <div class="stat-row">
-        <span class="stat-label"><span class="dot dot-cctv"></span> CCTV Nodes</span>
-        <span class="stat-value" id="cctvCount">—</span>
-      </div>
-    </div>
-
-    <!-- Selected target -->
-    <div class="card" id="targetCard">
-      <div class="card-title">Selected Target</div>
-      <div id="targetInfo" style="color:var(--muted);font-size:12px;">Click any object on the globe</div>
-    </div>
-
-    <!-- Clock -->
-    <div class="card">
-      <div id="clock"></div>
-    </div>
-
+    </label>
   </div>
 
-  <!-- Sidebar toggle button -->
-  <button id="sidebarToggle" class="open" onclick="toggleSidebar()" style="pointer-events:all;">⊞</button>
-
-  <!-- Mode switcher -->
-  <div id="controls">
-    <button class="mode-btn active" id="btn-normal" onclick="setMode('normal')">🌍 Standard</button>
-    <button class="mode-btn"        id="btn-nvg"    onclick="setMode('nvg')">🟢 Night Vision</button>
-    <button class="mode-btn"        id="btn-flir"   onclick="setMode('flir')">🔥 Thermal</button>
-    <button class="mode-btn"        id="btn-crt"    onclick="setMode('crt')">📺 CRT</button>
-    <button class="mode-btn"        id="btn-anime"  onclick="setMode('anime')">✨ Anime</button>
-    <button class="mode-btn"        id="btn-god"    onclick="toggleGodMode()">⚡ God Mode</button>
+  <!-- NAVAL -->
+  <div class="card">
+    <div class="card-hdr">⛵ Naval</div>
+    <label class="tog">
+      <span class="tog-label"><span>⚔️</span> Warships</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="tog-count" id="cnt-war">0</span>
+        <input type="checkbox" checked onchange="toggleLayer('war_ships',this.checked)"><div class="sw"></div>
+      </div>
+    </label>
+    <label class="tog">
+      <span class="tog-label"><span>🛢️</span> Oil / Tanker</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="tog-count" id="cnt-tanker">0</span>
+        <input type="checkbox" checked onchange="toggleLayer('oil_ships',this.checked)"><div class="sw"></div>
+      </div>
+    </label>
+    <label class="tog">
+      <span class="tog-label"><span>📦</span> Cargo</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="tog-count" id="cnt-cargo">0</span>
+        <input type="checkbox" checked onchange="toggleLayer('cargo_ships',this.checked)"><div class="sw"></div>
+      </div>
+    </label>
+    <label class="tog">
+      <span class="tog-label"><span>🚢</span> Passenger</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="tog-count" id="cnt-pass">0</span>
+        <input type="checkbox" checked onchange="toggleLayer('pass_ships',this.checked)"><div class="sw"></div>
+      </div>
+    </label>
   </div>
 
-  <!-- CSS overlays -->
-  <div id="overlay-scanlines"></div>
-  <div id="overlay-vignette-nvg"></div>
-  <div id="overlay-anime"></div>
+  <!-- OVERLAY -->
+  <div class="card">
+    <div class="card-hdr">Overlay</div>
+    <label class="tog">
+      <span class="tog-label"><span>🛰️</span> Satellites</span>
+      <input type="checkbox" checked onchange="toggleLayer('satellites',this.checked)"><div class="sw"></div>
+    </label>
+    <label class="tog">
+      <span class="tog-label"><span>💥</span> Conflict Zones</span>
+      <input type="checkbox" checked onchange="toggleLayer('warzones',this.checked)"><div class="sw"></div>
+    </label>
+    <label class="tog">
+      <span class="tog-label"><span>⚡</span> Flight Vectors</span>
+      <input type="checkbox" checked onchange="toggleLayer('vectors',this.checked)"><div class="sw"></div>
+    </label>
+    <label class="tog">
+      <span class="tog-label"><span>📷</span> CCTV Nodes</span>
+      <input type="checkbox" checked onchange="toggleLayer('cctv',this.checked)"><div class="sw"></div>
+    </label>
+  </div>
 
-  <!-- Reticle -->
-  <div id="reticle">
-    <svg width="120" height="120" viewBox="0 0 120 120" opacity="0.8">
-      <circle cx="60" cy="60" r="50" fill="none" stroke="#f87171" stroke-width="1" stroke-dasharray="4 6"/>
-      <circle cx="60" cy="60" r="5"  fill="none" stroke="#f87171" stroke-width="1.5"/>
-      <line x1="60" y1="0"   x2="60" y2="48"  stroke="#f87171" stroke-width="1"/>
-      <line x1="60" y1="72"  x2="60" y2="120" stroke="#f87171" stroke-width="1"/>
-      <line x1="0"   y1="60" x2="48" y2="60"  stroke="#f87171" stroke-width="1"/>
-      <line x1="72"  y1="60" x2="120" y2="60" stroke="#f87171" stroke-width="1"/>
-    </svg>
+  <!-- SITREP -->
+  <div class="card">
+    <div class="card-hdr">⚡ Sitrep</div>
+    <div class="sr-row">
+      <span class="sr-label">✈ Airborne</span>
+      <span class="sr-val" id="sr-air" style="color:var(--c-civ)">—</span>
+    </div>
+    <div class="sr-row">
+      <span class="sr-label">🎖️ Mil AC</span>
+      <span class="sr-val" id="sr-milac" style="color:var(--c-mil)">—</span>
+    </div>
+    <div class="sr-row">
+      <span class="sr-label">⚔️ Warships</span>
+      <span class="sr-val" id="sr-war" style="color:var(--c-war)">—</span>
+    </div>
+    <div class="sr-row">
+      <span class="sr-label">🛢️ Tankers</span>
+      <span class="sr-val" id="sr-tank" style="color:var(--c-tanker)">—</span>
+    </div>
+    <div class="sr-row">
+      <span class="sr-label">🛰️ Sats tracked</span>
+      <span class="sr-val" id="sr-sat" style="color:var(--c-sat)">—</span>
+    </div>
+    <div class="sr-row">
+      <span class="sr-label">💥 Conflict zones</span>
+      <span class="sr-val" id="sr-zones" style="color:var(--c-zone)">15</span>
+    </div>
+    <div class="sr-row">
+      <span class="sr-label">📷 CCTV nodes</span>
+      <span class="sr-val" id="sr-cctv" style="color:var(--c-cctv)">—</span>
+    </div>
+    <div id="god-status" style="display:none;margin-top:6px;padding-top:6px;
+      border-top:1px solid rgba(239,68,68,0.2);
+      font-size:10px;font-weight:600;color:#f87171;letter-spacing:1px;text-align:center;">
+      ⚡ GOD MODE ACTIVE
+    </div>
   </div>
 
 </div>
 
+<!-- ── RIGHT INTEL PANEL ── -->
+<div id="intelPanel">
+  <div class="card">
+    <div class="card-hdr">Selected Target</div>
+    <div id="targetInfo" style="color:var(--muted);font-size:11px;">Click any object on the globe</div>
+  </div>
+  <div class="card">
+    <div id="clock" class="clock-text"></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr">Feed Status</div>
+    <div class="sr-row"><span class="sr-label">Aircraft</span><span class="sr-val" id="aircraftCount" style="font-size:11px;">—</span></div>
+    <div class="sr-row"><span class="sr-label">Satellites</span><span class="sr-val" id="satelliteCount" style="font-size:11px;">—</span></div>
+    <div class="sr-row"><span class="sr-label">Last update</span><span class="sr-val" id="lastUpdate" style="font-size:10px;color:var(--muted);">—</span></div>
+  </div>
+</div>
+<button id="toggleIntel" onclick="toggleIntelPanel()">⊞</button>
+
+<!-- Overlays -->
+<div id="ol-scan"></div>
+<div id="ol-nvg"></div>
+<div id="ol-anime"></div>
+<div id="ol-tactical"></div>
+
+<!-- God Mode reticle -->
+<div id="reticle">
+  <svg width="120" height="120" viewBox="0 0 120 120" opacity="0.75">
+    <circle cx="60" cy="60" r="50" fill="none" stroke="#f87171" stroke-width="1" stroke-dasharray="4 6"/>
+    <circle cx="60" cy="60" r="5"  fill="none" stroke="#f87171" stroke-width="1.5"/>
+    <line x1="60" y1="0"  x2="60" y2="47" stroke="#f87171" stroke-width="1"/>
+    <line x1="60" y1="73" x2="60" y2="120" stroke="#f87171" stroke-width="1"/>
+    <line x1="0"  y1="60" x2="47" y2="60" stroke="#f87171" stroke-width="1"/>
+    <line x1="73" y1="60" x2="120" y2="60" stroke="#f87171" stroke-width="1"/>
+  </svg>
+</div>
+
 <script>
-// ================================================================
-// CONFIGURATION
-// ================================================================
+// ═══════════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════════
 const CFG = {
-  // Free token: https://ion.cesium.com/tokens
-  CESIUM_TOKEN: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlYWE1OWUxNy1mMDA1LTQzNzYtODc4OS05MDhjNDQwMjQ1MjIiLCJpZCI6NTc3OTUsImlhdCI6MTYyNjYwMzYwNn0.1FNiClcJ8fEHf6BNYF0GnELGBvqXRCtGAGTq_HKPQNQ',
-
-  // Free key: https://developers.google.com/maps/documentation/tile
-  GOOGLE_MAPS_KEY: '',   // leave blank to skip Google 3D tiles
-
+  GOOGLE_MAPS_KEY: '',
   OPENSKY_URL:    'https://opensky-network.org/api/states/all',
   CELESTRAK_URL:  'https://celestrak.org/NORAD/elements/gp.php',
-
-  FLIGHT_UPDATE_MS:    45000,  // 45 s (OpenSky free tier)
-  SATELLITE_UPDATE_MS: 1000,   // 1 s (computed locally from TLE)
+  FLIGHT_UPDATE_MS:    45000,
+  SATELLITE_UPDATE_MS: 1000,
+  VESSEL_UPDATE_MS:    120000,
 };
 
-// ================================================================
-// SHADERS — GLSL fragment shaders for CesiumJS PostProcessStage
-// ================================================================
+// ═══════════════════════════════════════════════════════════════
+// SHADERS
+// ═══════════════════════════════════════════════════════════════
 const GLSL = {
-  nvg: `
-    uniform sampler2D colorTexture;
-    in vec2 v_textureCoordinates;
-    void main() {
-      vec4 c = texture(colorTexture, v_textureCoordinates);
-      float lum = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-      // Film grain
-      float t = float(czm_frameNumber) * 0.07;
-      vec2 uv = v_textureCoordinates;
-      float noise = fract(sin(dot(uv * 120.0 + t, vec2(12.9898, 78.233))) * 43758.5453);
-      lum = clamp(lum + noise * 0.04, 0.0, 1.0);
-      // Green phosphor
-      vec3 nvg = vec3(lum * 0.12, lum * 1.05 + 0.06, lum * 0.14);
-      // Circular vignette
-      vec2 p = uv * 2.0 - 1.0;
-      float vig = pow(clamp(1.0 - dot(p * 0.42, p * 0.42), 0.0, 1.0), 1.8);
-      out_FragColor = vec4(nvg * vig, 1.0);
-    }`,
+  nvg:`uniform sampler2D colorTexture;in vec2 v_textureCoordinates;
+    void main(){
+      vec4 c=texture(colorTexture,v_textureCoordinates);
+      float lum=dot(c.rgb,vec3(0.299,0.587,0.114));
+      float t=float(czm_frameNumber)*0.07;
+      vec2 uv=v_textureCoordinates;
+      float n=fract(sin(dot(uv*120.+t,vec2(12.9898,78.233)))*43758.5453);
+      lum=clamp(lum+n*0.04,0.,1.);
+      vec3 col=vec3(lum*0.12,lum*1.05+0.06,lum*0.14);
+      vec2 p=uv*2.-1.;
+      float v=pow(clamp(1.-dot(p*0.42,p*0.42),0.,1.),1.8);
+      out_FragColor=vec4(col*v,1.);}`,
 
-  flir: `
-    uniform sampler2D colorTexture;
-    in vec2 v_textureCoordinates;
-    vec3 thermal(float t) {
-      t = clamp(t, 0.0, 1.0);
-      if (t < 0.20) return mix(vec3(0.00,0.00,0.00), vec3(0.04,0.04,0.28), t/0.20);
-      if (t < 0.40) return mix(vec3(0.04,0.04,0.28), vec3(0.00,0.50,0.55), (t-0.20)/0.20);
-      if (t < 0.60) return mix(vec3(0.00,0.50,0.55), vec3(0.00,0.80,0.10), (t-0.40)/0.20);
-      if (t < 0.80) return mix(vec3(0.00,0.80,0.10), vec3(1.00,0.50,0.00), (t-0.60)/0.20);
-      return mix(vec3(1.00,0.50,0.00), vec3(1.00,1.00,1.00), (t-0.80)/0.20);
-    }
-    void main() {
-      vec4 c = texture(colorTexture, v_textureCoordinates);
-      float heat = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-      heat = pow(heat, 0.65);
-      // Scanline artifact
-      heat += sin(v_textureCoordinates.y * 900.0) * 0.015;
-      out_FragColor = vec4(thermal(heat), 1.0);
-    }`,
+  flir:`uniform sampler2D colorTexture;in vec2 v_textureCoordinates;
+    vec3 th(float t){t=clamp(t,0.,1.);
+      if(t<.2)return mix(vec3(0,0,0),vec3(.04,.04,.28),t/.2);
+      if(t<.4)return mix(vec3(.04,.04,.28),vec3(0,.5,.55),(t-.2)/.2);
+      if(t<.6)return mix(vec3(0,.5,.55),vec3(0,.8,.1),(t-.4)/.2);
+      if(t<.8)return mix(vec3(0,.8,.1),vec3(1.,.5,0),(t-.6)/.2);
+      return mix(vec3(1.,.5,0),vec3(1,1,1),(t-.8)/.2);}
+    void main(){
+      vec4 c=texture(colorTexture,v_textureCoordinates);
+      float h=dot(c.rgb,vec3(.299,.587,.114));
+      h=pow(h,.65)+sin(v_textureCoordinates.y*900.)*.015;
+      out_FragColor=vec4(th(h),1.);}`,
 
-  crt: `
-    uniform sampler2D colorTexture;
-    in vec2 v_textureCoordinates;
-    vec2 barrel(vec2 uv) {
-      uv = uv * 2.0 - 1.0;
-      float r2 = dot(uv, uv);
-      uv *= 1.0 + r2 * 0.09;
-      return uv * 0.5 + 0.5;
-    }
-    void main() {
-      vec2 uv = barrel(v_textureCoordinates);
-      if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
-        out_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-        return;
-      }
-      float sh = 0.003;
-      float r = texture(colorTexture, vec2(uv.x + sh, uv.y)).r;
-      float g = texture(colorTexture, uv).g;
-      float b = texture(colorTexture, vec2(uv.x - sh, uv.y)).b;
-      vec3 col = vec3(r, g, b);
-      // Scanlines
-      float sl = mod(floor(uv.y * 700.0), 2.0);
-      col *= 0.82 + sl * 0.18;
-      col.g *= 1.08; col.r *= 0.94;
-      // Vignette
-      vec2 p = v_textureCoordinates * 2.0 - 1.0;
-      col *= clamp(1.0 - dot(p * 0.38, p * 0.38), 0.0, 1.0);
-      out_FragColor = vec4(col, 1.0);
-    }`,
+  crt:`uniform sampler2D colorTexture;in vec2 v_textureCoordinates;
+    vec2 brl(vec2 uv){uv=uv*2.-1.;float r2=dot(uv,uv);uv*=1.+r2*.09;return uv*.5+.5;}
+    void main(){
+      vec2 uv=brl(v_textureCoordinates);
+      if(uv.x<0.||uv.x>1.||uv.y<0.||uv.y>1.){out_FragColor=vec4(0,0,0,1);return;}
+      float sh=.003;
+      float r=texture(colorTexture,vec2(uv.x+sh,uv.y)).r;
+      float g=texture(colorTexture,uv).g;
+      float b=texture(colorTexture,vec2(uv.x-sh,uv.y)).b;
+      vec3 col=vec3(r,g,b);
+      col*=.82+mod(floor(uv.y*700.),2.)*.18;
+      col.g*=1.08;col.r*=.94;
+      vec2 p=v_textureCoordinates*2.-1.;
+      col*=clamp(1.-dot(p*.38,p*.38),0.,1.);
+      out_FragColor=vec4(col,1.);}`,
 
-  anime: `
-    uniform sampler2D colorTexture;
-    in vec2 v_textureCoordinates;
-    void main() {
-      vec2 uv = v_textureCoordinates;
-      vec2 px = vec2(1.0/1920.0, 1.0/1080.0);
-      // Sobel edge detection
-      vec3 tl = texture(colorTexture, uv + vec2(-1,-1)*px).rgb;
-      vec3 tc = texture(colorTexture, uv + vec2( 0,-1)*px).rgb;
-      vec3 tr = texture(colorTexture, uv + vec2( 1,-1)*px).rgb;
-      vec3 ml = texture(colorTexture, uv + vec2(-1, 0)*px).rgb;
-      vec3 mr = texture(colorTexture, uv + vec2( 1, 0)*px).rgb;
-      vec3 bl = texture(colorTexture, uv + vec2(-1, 1)*px).rgb;
-      vec3 bc = texture(colorTexture, uv + vec2( 0, 1)*px).rgb;
-      vec3 br = texture(colorTexture, uv + vec2( 1, 1)*px).rgb;
-      vec3 sobelX = -tl + tr - 2.0*ml + 2.0*mr - bl + br;
-      vec3 sobelY = -tl - 2.0*tc - tr + bl + 2.0*bc + br;
-      float edge = smoothstep(0.25, 0.75, length(sobelX) + length(sobelY));
-      // Posterize
-      vec3 col = floor(texture(colorTexture, uv).rgb * 5.0) / 5.0;
-      // Saturate
-      float lum = dot(col, vec3(0.299, 0.587, 0.114));
-      col = mix(vec3(lum), col, 1.7);
-      // Outline
-      col = mix(col, vec3(0.04, 0.04, 0.10), edge);
-      out_FragColor = vec4(col, 1.0);
-    }`
+  anime:`uniform sampler2D colorTexture;in vec2 v_textureCoordinates;
+    void main(){
+      vec2 uv=v_textureCoordinates;
+      vec2 px=vec2(1./1920.,1./1080.);
+      vec3 tl=texture(colorTexture,uv+vec2(-1,-1)*px).rgb;
+      vec3 tc=texture(colorTexture,uv+vec2(0,-1)*px).rgb;
+      vec3 tr=texture(colorTexture,uv+vec2(1,-1)*px).rgb;
+      vec3 ml=texture(colorTexture,uv+vec2(-1,0)*px).rgb;
+      vec3 mr=texture(colorTexture,uv+vec2(1,0)*px).rgb;
+      vec3 bl=texture(colorTexture,uv+vec2(-1,1)*px).rgb;
+      vec3 bc=texture(colorTexture,uv+vec2(0,1)*px).rgb;
+      vec3 br=texture(colorTexture,uv+vec2(1,1)*px).rgb;
+      vec3 sX=-tl+tr-2.*ml+2.*mr-bl+br;
+      vec3 sY=-tl-2.*tc-tr+bl+2.*bc+br;
+      float edge=smoothstep(.25,.75,length(sX)+length(sY));
+      vec3 col=floor(texture(colorTexture,uv).rgb*5.)/5.;
+      float l=dot(col,vec3(.299,.587,.114));
+      col=mix(vec3(l),col,1.7);
+      col=mix(col,vec3(.04,.04,.1),edge);
+      out_FragColor=vec4(col,1.);}`,
+
+  tactical:`uniform sampler2D colorTexture;in vec2 v_textureCoordinates;
+    void main(){
+      vec4 c=texture(colorTexture,v_textureCoordinates);
+      float lum=dot(c.rgb,vec3(.299,.587,.114));
+      vec3 col=vec3(lum*.08,lum*.45+.02,lum*.3);
+      vec2 uv=v_textureCoordinates;
+      float gx=step(.98,fract(uv.x*50.));
+      float gy=step(.98,fract(uv.y*30.));
+      col=mix(col,vec3(0.,.35,.22),(gx+gy)*.35);
+      vec2 p=uv*2.-1.;
+      col*=clamp(1.1-dot(p*.28,p*.28),0.,1.);
+      out_FragColor=vec4(col,1.);}`,
 };
 
-// ================================================================
+// ═══════════════════════════════════════════════════════════════
 // STATE
-// ================================================================
+// ═══════════════════════════════════════════════════════════════
 let viewer, shaderStages = {};
-
-// ── SVG billboard icon helper ──────────────────────────────────
-function svgIcon(emoji, size = 22) {
-  const s = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><text x="50%" y="54%" dominant-baseline="central" text-anchor="middle" font-size="${Math.round(size*0.85)}">${emoji}</text></svg>`;
-  return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(s)));
-}
-const ICONS = {
-  aircraft:  svgIcon('✈', 22),
-  satellite: svgIcon('🛰', 18),
-  cctv:      svgIcon('📷', 16),
-  vehicle:   svgIcon('🚗', 12),
-  milSat:    svgIcon('⚠️', 18),
-};
-let currentMode  = 'normal';
-let godModeOn    = false;
+let currentMode = 'normal';
+let godModeOn = false;
+let intelOpen = true;
 let aircraftMap  = {};
 let satelliteMap = {};
+let vesselMap    = {};
+let vectorMap    = {};
+let warzoneEntities = [];
+let cctvEntities = [];
 let satelliteTLEs = [];
 
-// ================================================================
+const layers = {
+  mil_ac:true, vip_ac:true, civ_ac:true,
+  war_ships:true, oil_ships:true, cargo_ships:true, pass_ships:true,
+  satellites:true, warzones:true, vectors:true, cctv:true,
+};
+
+// ── SVG icon helper ─────────────────────────────────────────────
+function svgIcon(emoji, sz=22){
+  const s=`<svg xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}"><text x="50%" y="54%" dominant-baseline="central" text-anchor="middle" font-size="${Math.round(sz*.85)}">${emoji}</text></svg>`;
+  return 'data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(s)));
+}
+const ICO = {
+  civ:  svgIcon('✈',20), mil:svgIcon('🎖️',20), vip:svgIcon('⭐',20),
+  sat:  svgIcon('🛰️',18), milSat:svgIcon('⚠️',18),
+  cctv: svgIcon('📷',16),
+  war:  svgIcon('⚔️',20), tanker:svgIcon('🛢️',20),
+  cargo:svgIcon('📦',20), pass:svgIcon('🚢',20),
+  zone: svgIcon('💥',24),
+};
+
+// ═══════════════════════════════════════════════════════════════
 // LOADING UI
-// ================================================================
-function setLoad(pct, text) {
-  document.getElementById('loadBar').style.width = pct + '%';
-  document.getElementById('loadStatus').textContent = text;
+// ═══════════════════════════════════════════════════════════════
+function setLoad(p,t){
+  document.getElementById('loadBar').style.width=p+'%';
+  document.getElementById('loadSt').textContent=t;
 }
 
-// ================================================================
+// ═══════════════════════════════════════════════════════════════
 // CESIUM INIT
-// ================================================================
-function initCesium() {
-  // Blank out Ion token so CesiumJS never attempts Ion requests
-  Cesium.Ion.defaultAccessToken = '';
-
-  viewer = new Cesium.Viewer('cesiumContainer', {
-    terrainProvider:      new Cesium.EllipsoidTerrainProvider(),
-    baseLayer:            false,   // skip default Ion imagery layer
-    skyBox:               false,   // skip Ion skybox (asset 2)
-    skyAtmosphere:        false,   // skip Ion atmosphere
-    timeline:             false,
-    animation:            false,
-    baseLayerPicker:      false,
-    geocoder:             false,
-    homeButton:           false,
-    sceneModePicker:      false,
-    navigationHelpButton: false,
-    fullscreenButton:     false,
-    infoBox:              false,
-    selectionIndicator:   false,
+// ═══════════════════════════════════════════════════════════════
+function initCesium(){
+  Cesium.Ion.defaultAccessToken='';
+  viewer=new Cesium.Viewer('cesiumContainer',{
+    terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+    baseLayer:       false,
+    skyBox:          false,
+    skyAtmosphere:   false,
+    timeline:false,animation:false,baseLayerPicker:false,
+    geocoder:false,homeButton:false,sceneModePicker:false,
+    navigationHelpButton:false,fullscreenButton:false,
+    infoBox:false,selectionIndicator:false,
   });
-
-  // ESRI World Imagery — free, no API key required
   viewer.imageryLayers.removeAll();
-  viewer.imageryLayers.addImageryProvider(
-    new Cesium.UrlTemplateImageryProvider({
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      maximumLevel: 19,
-      credit: 'ESRI World Imagery',
-    })
-  );
-
-  // Try to upgrade to ArcGIS terrain (free, no key)
+  viewer.imageryLayers.addImageryProvider(new Cesium.UrlTemplateImageryProvider({
+    url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    maximumLevel:19,credit:'ESRI World Imagery',
+  }));
   Cesium.ArcGISTiledElevationTerrainProvider.fromUrl(
     'https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer'
-  ).then(tp => viewer.terrainProvider = tp).catch(() => {});
-
-  viewer.scene.globe.enableLighting = true;
-  viewer.scene.fog.enabled = true;
-  viewer.scene.highDynamicRange = false;
-
-  // Start view over Austin, TX
+  ).then(tp=>viewer.terrainProvider=tp).catch(()=>{});
+  viewer.scene.globe.enableLighting=true;
+  viewer.scene.fog.enabled=true;
+  viewer.scene.highDynamicRange=false;
   viewer.camera.flyTo({
-    destination: Cesium.Cartesian3.fromDegrees(-97.7431, 30.2672, 550000),
-    orientation: {
-      heading: Cesium.Math.toRadians(0),
-      pitch:   Cesium.Math.toRadians(-50),
-      roll:    0
-    },
-    duration: 3
+    destination:Cesium.Cartesian3.fromDegrees(20,20,18000000),
+    orientation:{heading:0,pitch:Cesium.Math.toRadians(-90),roll:0},
+    duration:2,
   });
 }
 
-// ================================================================
-// POST-PROCESS SHADERS
-// ================================================================
-function initShaders() {
-  for (const [name, glsl] of Object.entries(GLSL)) {
-    const stage = viewer.scene.postProcessStages.add(
-      new Cesium.PostProcessStage({ fragmentShader: glsl })
-    );
-    stage.enabled = false;
-    shaderStages[name] = stage;
+// ═══════════════════════════════════════════════════════════════
+// SHADERS
+// ═══════════════════════════════════════════════════════════════
+function initShaders(){
+  for(const[k,v] of Object.entries(GLSL)){
+    const s=viewer.scene.postProcessStages.add(new Cesium.PostProcessStage({fragmentShader:v}));
+    s.enabled=false;
+    shaderStages[k]=s;
   }
 }
 
-// ================================================================
-// AIRCRAFT — OpenSky Network
-// ================================================================
-async function fetchAircraft() {
-  try {
-    const r = await fetch(CFG.OPENSKY_URL, { signal: AbortSignal.timeout(10000) });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const data = await r.json();
-    const states = (data.states || []).filter(s => s[5] && s[6] && !s[8]);
-    updateAircraftEntities(states);
-    document.getElementById('aircraftCount').textContent = states.length.toString();
-    document.getElementById('lastUpdate').textContent = 'LIVE';
-  } catch (e) {
-    console.warn('[OpenSky]', e.message);
-    document.getElementById('aircraftCount').textContent = 'API UNAVAIL';
-    document.getElementById('lastUpdate').textContent = 'DEMO';
+// ═══════════════════════════════════════════════════════════════
+// AIRCRAFT CLASSIFICATION
+// ═══════════════════════════════════════════════════════════════
+function classifyAC(cs){
+  const c=(cs||'').toUpperCase();
+  if(/^(RCH|REACH|JAKE|MAGMA|DARK|FURY|GHOST|HAVOC|KNIFE|MOOSE|RACER|ROCKY|SABER|TALON|USAF|NAVY|ARMY|RRR|FORTE|POLO|RANGER|GRIZZLY|DRAGON|EAGLE|FALCON|VIPER|COBRA|IRON|STEEL|BRASS|BUCK|COOP|DUDE|EVAC|KING|MAFIA|NATO|OTIS|PAPA|RICO|TSAR|VOLT|WASP|ZEUS|MARFLT)/.test(c))return'mil';
+  if(/^(AF1|AF2|SAM|PAT|VENUS|EXEC|HEAD|CROWN|MARINE1|MARINE2|FLOTUS|POTUS|GOVT|SPAR)/.test(c))return'vip';
+  return'civ';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AIRCRAFT — OpenSky
+// ═══════════════════════════════════════════════════════════════
+async function fetchAircraft(){
+  try{
+    const r=await fetch(CFG.OPENSKY_URL,{signal:AbortSignal.timeout(10000)});
+    if(!r.ok)throw new Error();
+    const d=await r.json();
+    const st=(d.states||[]).filter(s=>s[5]&&s[6]&&!s[8]);
+    updateAircraft(st);
+    document.getElementById('aircraftCount').textContent=st.length.toString();
+    document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString();
+  }catch(e){
+    document.getElementById('aircraftCount').textContent='API Unavail';
+    document.getElementById('lastUpdate').textContent='Demo';
     loadDemoAircraft();
   }
 }
 
-function updateAircraftEntities(states) {
-  const live = new Set();
-
-  states.forEach(s => {
-    const [icao24, callsign, country, , , lon, lat, baroAlt, , velocity, track] = s;
-    if (!lon || !lat) return;
-
-    const id  = icao24;
-    const cs  = (callsign || icao24).trim();
-    const alt = baroAlt || 8000;
-    const hdg = track || 0;
-    const spd = velocity || 0;
+function updateAircraft(states){
+  const live=new Set();
+  let cntMil=0,cntVip=0,cntCiv=0;
+  states.forEach(s=>{
+    const[icao24,callsign,country,,, lon,lat,baroAlt,,velocity,track]=s;
+    if(!lon||!lat)return;
+    const id=icao24,cs=(callsign||icao24).trim();
+    const alt=baroAlt||8000,hdg=track||0,spd=velocity||0;
+    const cls=classifyAC(cs);
+    if(cls==='mil')cntMil++;else if(cls==='vip')cntVip++;else cntCiv++;
     live.add(id);
-
-    const pos = Cesium.Cartesian3.fromDegrees(lon, lat, alt);
-
-    if (aircraftMap[id]) {
-      aircraftMap[id].position = pos;
-    } else {
-      aircraftMap[id] = viewer.entities.add({
-        id:   'ac_' + id,
-        name: cs,
-        position: pos,
-        billboard: {
-          image: ICONS.aircraft,
-          width: 22, height: 22,
-          scaleByDistance: new Cesium.NearFarScalar(5e4, 1.4, 8e6, 0.4),
-          disableDepthTestDistance: 5e6,
-          verticalOrigin: Cesium.VerticalOrigin.CENTER,
-        },
-        label: {
-          text: cs.substring(0, 8),
-          font: '11px Inter, system-ui',
-          fillColor: Cesium.Color.fromCssColorString('#38bdf8'),
-          outlineColor: Cesium.Color.BLACK,
-          outlineWidth: 3,
-          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-          pixelOffset: new Cesium.Cartesian2(14, -2),
-          scaleByDistance: new Cesium.NearFarScalar(5e4, 1.0, 2e6, 0.0),
-          disableDepthTestDistance: 5e6,
-        },
-        properties: {
-          entityType: 'aircraft',
-          callsign: cs,
-          altitude: Math.round(alt),
-          speed: Math.round(spd),
-          heading: Math.round(hdg),
-          country: country,
-          icao: icao24,
-        }
+    const pos=Cesium.Cartesian3.fromDegrees(lon,lat,alt);
+    const ico=cls==='mil'?ICO.mil:cls==='vip'?ICO.vip:ICO.civ;
+    const lc=cls==='mil'?'#f59e0b':cls==='vip'?'#a78bfa':'#38bdf8';
+    const layerKey=cls==='mil'?'mil_ac':cls==='vip'?'vip_ac':'civ_ac';
+    if(aircraftMap[id]){
+      aircraftMap[id].position=pos;
+      // update vector
+      if(vectorMap[id]){updateVector(id,lon,lat,alt,hdg,spd);}
+    }else{
+      aircraftMap[id]=viewer.entities.add({
+        id:'ac_'+id,name:cs,position:pos,
+        show:layers[layerKey],
+        billboard:{image:ico,width:20,height:20,
+          scaleByDistance:new Cesium.NearFarScalar(5e4,1.4,8e6,0.4),
+          disableDepthTestDistance:5e6},
+        label:{text:cs.substring(0,8),font:'10px Inter,system-ui',
+          fillColor:Cesium.Color.fromCssColorString(lc),
+          outlineColor:Cesium.Color.BLACK,outlineWidth:3,
+          style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+          pixelOffset:new Cesium.Cartesian2(13,-2),
+          scaleByDistance:new Cesium.NearFarScalar(5e4,1.0,2e6,0.0),
+          disableDepthTestDistance:5e6},
+        properties:{entityType:'aircraft',callsign:cs,altitude:Math.round(alt),
+          speed:Math.round(spd),heading:Math.round(hdg),country,icao:icao24,acClass:cls}
       });
+      // create vector line
+      addVector(id,lon,lat,alt,hdg,spd,lc,layerKey);
     }
   });
-
-  // Remove stale
-  Object.keys(aircraftMap).forEach(id => {
-    if (!live.has(id)) {
+  // stale cleanup
+  Object.keys(aircraftMap).forEach(id=>{
+    if(!live.has(id)){
       viewer.entities.remove(aircraftMap[id]);
-      delete aircraftMap[id];
+      if(vectorMap[id])viewer.entities.remove(vectorMap[id]);
+      delete aircraftMap[id];delete vectorMap[id];
+    }
+  });
+  document.getElementById('cnt-mil-ac').textContent=cntMil;
+  document.getElementById('cnt-vip-ac').textContent=cntVip;
+  document.getElementById('cnt-civ-ac').textContent=cntCiv;
+  document.getElementById('sr-air').textContent=(cntMil+cntVip+cntCiv).toLocaleString();
+  document.getElementById('sr-milac').textContent=cntMil;
+}
+
+function addVector(id,lon,lat,alt,hdg,spd,color,layerKey){
+  const d=Math.max(spd,50)*300;
+  const rad=Cesium.Math.toRadians(hdg);
+  const dlat=(d*Math.cos(rad))/111111;
+  const dlon=(d*Math.sin(rad))/(111111*Math.cos(Cesium.Math.toRadians(lat)));
+  vectorMap[id]=viewer.entities.add({
+    show:layers.vectors&&layers[layerKey],
+    polyline:{
+      positions:[
+        Cesium.Cartesian3.fromDegrees(lon,lat,alt),
+        Cesium.Cartesian3.fromDegrees(lon+dlon,lat+dlat,alt),
+      ],
+      width:1.2,
+      material:new Cesium.ColorMaterialProperty(Cesium.Color.fromCssColorString(color).withAlpha(0.45)),
+      clampToGround:false,
     }
   });
 }
-
-function loadDemoAircraft() {
-  const demo = [
-    { id:'D1', cs:'UAL123',  lat: 40.60, lon: -73.80, alt:10668, spd:245, hdg: 90, ctry:'United States' },
-    { id:'D2', cs:'BAW442',  lat: 51.40, lon:  -0.40, alt: 9144, spd:230, hdg:270, ctry:'United Kingdom' },
-    { id:'D3', cs:'DLH001',  lat: 48.80, lon:   2.30, alt:11277, spd:245, hdg: 45, ctry:'Germany'        },
-    { id:'D4', cs:'SWA4567', lat: 33.94, lon:-118.40, alt: 8839, spd:220, hdg:315, ctry:'United States'  },
-    { id:'D5', cs:'JAL31',   lat: 35.55, lon: 139.78, alt:10972, spd:265, hdg:180, ctry:'Japan'          },
-    { id:'D6', cs:'AFR666',  lat: 48.70, lon:   2.20, alt:11000, spd:240, hdg:200, ctry:'France'         },
-    { id:'D7', cs:'QFA11',   lat:-33.86, lon: 151.21, alt: 9500, spd:255, hdg: 10, ctry:'Australia'      },
-    { id:'D8', cs:'MAS37',   lat:  3.14, lon: 101.69, alt:10200, spd:248, hdg: 60, ctry:'Malaysia'       },
+function updateVector(id,lon,lat,alt,hdg,spd){
+  if(!vectorMap[id])return;
+  const d=Math.max(spd,50)*300;
+  const rad=Cesium.Math.toRadians(hdg);
+  const dlat=(d*Math.cos(rad))/111111;
+  const dlon=(d*Math.sin(rad))/(111111*Math.cos(Cesium.Math.toRadians(lat)));
+  vectorMap[id].polyline.positions=[
+    Cesium.Cartesian3.fromDegrees(lon,lat,alt),
+    Cesium.Cartesian3.fromDegrees(lon+dlon,lat+dlat,alt),
   ];
-  demo.forEach(f => {
-    if (aircraftMap[f.id]) return;
-    aircraftMap[f.id] = viewer.entities.add({
-      id: 'ac_' + f.id,
-      name: f.cs,
-      position: Cesium.Cartesian3.fromDegrees(f.lon, f.lat, f.alt),
-      billboard: {
-        image: ICONS.aircraft,
-        width: 22, height: 22,
-        scaleByDistance: new Cesium.NearFarScalar(5e4, 1.4, 8e6, 0.4),
-        disableDepthTestDistance: 5e6,
-      },
-      label: {
-        text: f.cs,
-        font: '11px Inter, system-ui',
-        fillColor: Cesium.Color.fromCssColorString('#38bdf8'),
-        outlineColor: Cesium.Color.BLACK,
-        outlineWidth: 3,
-        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-        pixelOffset: new Cesium.Cartesian2(14, -2),
-        scaleByDistance: new Cesium.NearFarScalar(5e4, 1.0, 2e6, 0.0),
-        disableDepthTestDistance: 5e6,
-      },
-      properties: {
-        entityType: 'aircraft',
-        callsign: f.cs,
-        altitude: f.alt,
-        speed: f.spd,
-        heading: f.hdg,
-        country: f.ctry,
-        icao: f.id,
-      }
-    });
-  });
-  document.getElementById('aircraftCount').textContent = demo.length + ' (DEMO)';
 }
 
-// ================================================================
-// SATELLITES — CelesTrak TLE + satellite.js propagation
-// ================================================================
-async function fetchSatellites() {
-  // Try JSON first (includes TLE lines)
-  try {
-    const r = await fetch(`${CFG.CELESTRAK_URL}?GROUP=visual&FORMAT=tle`, { signal: AbortSignal.timeout(10000) });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const text = await r.text();
-    const lines = text.trim().split('\n').map(l => l.trim()).filter(Boolean);
-    satelliteTLEs = [];
-    for (let i = 0; i + 2 < lines.length; i += 3) {
-      const name = lines[i];
-      const l1   = lines[i + 1];
-      const l2   = lines[i + 2];
-      if (l1[0] !== '1' || l2[0] !== '2') continue;
-      try {
-        const satrec = satellite.twoline2satrec(l1, l2);
-        satelliteTLEs.push({ name, satrec });
-      } catch (_) {}
+function loadDemoAircraft(){
+  const demo=[
+    {id:'D1',cs:'UAL123', lat:40.6, lon:-73.8, alt:10668,spd:245,hdg: 90,ctry:'United States',cls:'civ'},
+    {id:'D2',cs:'BAW442', lat:51.4, lon: -0.4, alt: 9144,spd:230,hdg:270,ctry:'United Kingdom',cls:'civ'},
+    {id:'D3',cs:'DLH001', lat:48.8, lon:  2.3, alt:11277,spd:245,hdg: 45,ctry:'Germany',cls:'civ'},
+    {id:'D4',cs:'SWA4567',lat:33.9, lon:-118.4,alt: 8839,spd:220,hdg:315,ctry:'United States',cls:'civ'},
+    {id:'D5',cs:'JAL31',  lat:35.5, lon:139.8, alt:10972,spd:265,hdg:180,ctry:'Japan',cls:'civ'},
+    {id:'D6',cs:'AF1',    lat:38.9, lon:-77.0, alt:12000,spd:280,hdg: 90,ctry:'United States',cls:'vip'},
+    {id:'D7',cs:'RCH007', lat:51.5, lon: -1.7, alt:10000,spd:250,hdg:200,ctry:'United States',cls:'mil'},
+    {id:'D8',cs:'REACH44',lat:35.7, lon:138.0, alt:11000,spd:255,hdg: 45,ctry:'United States',cls:'mil'},
+    {id:'D9',cs:'QFA11',  lat:-33.9,lon:151.2, alt: 9500,spd:255,hdg: 10,ctry:'Australia',cls:'civ'},
+    {id:'D10',cs:'MAS37', lat:  3.1,lon:101.7, alt:10200,spd:248,hdg: 60,ctry:'Malaysia',cls:'civ'},
+  ];
+  let cm=0,cv=0,cc=0;
+  demo.forEach(f=>{
+    if(aircraftMap[f.id])return;
+    const ico=f.cls==='mil'?ICO.mil:f.cls==='vip'?ICO.vip:ICO.civ;
+    const lc=f.cls==='mil'?'#f59e0b':f.cls==='vip'?'#a78bfa':'#38bdf8';
+    const lk=f.cls==='mil'?'mil_ac':f.cls==='vip'?'vip_ac':'civ_ac';
+    aircraftMap[f.id]=viewer.entities.add({
+      id:'ac_'+f.id,name:f.cs,
+      position:Cesium.Cartesian3.fromDegrees(f.lon,f.lat,f.alt),
+      show:layers[lk],
+      billboard:{image:ico,width:20,height:20,
+        scaleByDistance:new Cesium.NearFarScalar(5e4,1.4,8e6,0.4),
+        disableDepthTestDistance:5e6},
+      label:{text:f.cs,font:'10px Inter,system-ui',
+        fillColor:Cesium.Color.fromCssColorString(lc),
+        outlineColor:Cesium.Color.BLACK,outlineWidth:3,
+        style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+        pixelOffset:new Cesium.Cartesian2(13,-2),
+        scaleByDistance:new Cesium.NearFarScalar(5e4,1.0,2e6,0.0),
+        disableDepthTestDistance:5e6},
+      properties:{entityType:'aircraft',callsign:f.cs,altitude:f.alt,speed:f.spd,heading:f.hdg,country:f.ctry,acClass:f.cls}
+    });
+    addVector(f.id,f.lon,f.lat,f.alt,f.hdg,f.spd,lc,lk);
+    if(f.cls==='mil')cm++;else if(f.cls==='vip')cv++;else cc++;
+  });
+  document.getElementById('aircraftCount').textContent=demo.length+' (Demo)';
+  document.getElementById('cnt-mil-ac').textContent=cm;
+  document.getElementById('cnt-vip-ac').textContent=cv;
+  document.getElementById('cnt-civ-ac').textContent=cc;
+  document.getElementById('sr-air').textContent=demo.length;
+  document.getElementById('sr-milac').textContent=cm;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SATELLITES
+// ═══════════════════════════════════════════════════════════════
+async function fetchSatellites(){
+  try{
+    const r=await fetch(`${CFG.CELESTRAK_URL}?GROUP=visual&FORMAT=tle`,{signal:AbortSignal.timeout(10000)});
+    if(!r.ok)throw new Error();
+    const txt=await r.text();
+    const lines=txt.trim().split('\n').map(l=>l.trim()).filter(Boolean);
+    satelliteTLEs=[];
+    for(let i=0;i+2<lines.length;i+=3){
+      const nm=lines[i],l1=lines[i+1],l2=lines[i+2];
+      if(l1[0]!=='1'||l2[0]!=='2')continue;
+      try{satelliteTLEs.push({name:nm,satrec:satellite.twoline2satrec(l1,l2)});}catch(_){}
     }
-    document.getElementById('satelliteCount').textContent = satelliteTLEs.length.toString();
-    notify('LOADED ' + satelliteTLEs.length + ' SATELLITE TLEs');
-  } catch (e) {
-    console.warn('[CelesTrak]', e.message);
+    document.getElementById('satelliteCount').textContent=satelliteTLEs.length.toString();
+    document.getElementById('sr-sat').textContent=satelliteTLEs.length;
+    notify('🛰️ '+satelliteTLEs.length+' satellites loaded');
+  }catch(e){
     loadDemoSatellites();
   }
 }
-
-function loadDemoSatellites() {
-  // ISS + a few common satellites (pre-baked approximate TLE lines)
-  const demoTLEs = [
-    ['ISS (ZARYA)',
-     '1 25544U 98067A   24001.50000000  .00002182  00000-0  40215-4 0  9990',
-     '2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.50138523427149'],
-    ['HUBBLE',
-     '1 20580U 90037B   24001.50000000  .00001354  00000-0  64697-4 0  9997',
-     '2 20580  28.4700 224.4425 0002826 271.0956 234.0780 15.09679060371735'],
-    ['NOAA 19',
-     '1 33591U 09005A   24001.50000000  .00000064  00000-0  62717-4 0  9993',
-     '2 33591  99.1680 123.3400 0013968 199.7400 160.3200 14.12270000734801'],
-    ['TERRA',
-     '1 25994U 99068A   24001.50000000  .00000019  00000-0  24975-4 0  9997',
-     '2 25994  98.2026  62.9437 0001401  91.3399 268.7900 14.57110824277502'],
-    ['AQUA',
-     '1 27424U 02022A   24001.50000000  .00000136  00000-0  65516-4 0  9991',
-     '2 27424  98.2082  65.0180 0001523  89.4600 270.6700 14.57117500115280'],
-    ['STARLINK-30000',
-     '1 55000U 23001A   24001.50000000  .00001000  00000-0  10000-3 0  9995',
-     '2 55000  53.0000 100.0000 0001500  90.0000 270.0000 15.06000000000000'],
+function loadDemoSatellites(){
+  const d=[
+    ['ISS (ZARYA)','1 25544U 98067A   24001.50000000  .00002182  00000-0  40215-4 0  9990','2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.50138523427149'],
+    ['HUBBLE',     '1 20580U 90037B   24001.50000000  .00001354  00000-0  64697-4 0  9997','2 20580  28.4700 224.4425 0002826 271.0956 234.0780 15.09679060371735'],
+    ['NOAA 19',    '1 33591U 09005A   24001.50000000  .00000064  00000-0  62717-4 0  9993','2 33591  99.1680 123.3400 0013968 199.7400 160.3200 14.12270000734801'],
+    ['TERRA',      '1 25994U 99068A   24001.50000000  .00000019  00000-0  24975-4 0  9997','2 25994  98.2026  62.9437 0001401  91.3399 268.7900 14.57110824277502'],
+    ['AQUA',       '1 27424U 02022A   24001.50000000  .00000136  00000-0  65516-4 0  9991','2 27424  98.2082  65.0180 0001523  89.4600 270.6700 14.57117500115280'],
   ];
-  demoTLEs.forEach(([name, l1, l2]) => {
-    try {
-      const satrec = satellite.twoline2satrec(l1, l2);
-      satelliteTLEs.push({ name, satrec });
-    } catch (_) {}
-  });
-  document.getElementById('satelliteCount').textContent = satelliteTLEs.length + ' (DEMO)';
+  d.forEach(([nm,l1,l2])=>{try{satelliteTLEs.push({name:nm,satrec:satellite.twoline2satrec(l1,l2)});}catch(_){}});
+  document.getElementById('satelliteCount').textContent=satelliteTLEs.length+' (Demo)';
+  document.getElementById('sr-sat').textContent=satelliteTLEs.length;
 }
-
-function propagateSatellites() {
-  if (!satelliteTLEs.length) return;
-  const now  = new Date();
-  const gmst = satellite.gstime(now);
-
-  satelliteTLEs.forEach((sat, i) => {
-    try {
-      const pv = satellite.propagate(sat.satrec, now);
-      if (!pv || !pv.position) return;
-
-      const geo = satellite.eciToGeodetic(pv.position, gmst);
-      const lon = satellite.degreesLong(geo.longitude);
-      const lat = satellite.degreesLat(geo.latitude);
-      const alt = geo.height * 1000; // km → m
-
-      if (isNaN(lon) || isNaN(lat) || isNaN(alt) || alt < 0) return;
-
-      const isMil = /USA |KH-|LACROSSE|NROL|KEYHOLE|ONYX/.test(sat.name.toUpperCase());
-      const color = isMil ? Cesium.Color.RED : Cesium.Color.YELLOW;
-      const id = 'sat_' + i;
-
-      if (satelliteMap[id]) {
-        satelliteMap[id].position = Cesium.Cartesian3.fromDegrees(lon, lat, alt);
-      } else {
-        satelliteMap[id] = viewer.entities.add({
-          id,
-          name: sat.name,
-          position: Cesium.Cartesian3.fromDegrees(lon, lat, alt),
-          billboard: {
-            image: isMil ? ICONS.milSat : ICONS.satellite,
-            width: 18, height: 18,
-            scaleByDistance: new Cesium.NearFarScalar(5e5, 1.4, 2e7, 0.3),
-            disableDepthTestDistance: 2e7,
-          },
-          label: {
-            text: sat.name.substring(0, 12),
-            font: '10px Inter, system-ui',
-            fillColor: color,
-            outlineColor: Cesium.Color.BLACK,
-            outlineWidth: 2,
-            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-            pixelOffset: new Cesium.Cartesian2(12, -2),
-            scaleByDistance: new Cesium.NearFarScalar(5e5, 1.0, 5e6, 0.0),
-            disableDepthTestDistance: 2e7,
-          },
-          properties: {
-            entityType: 'satellite',
-            satName: sat.name,
-            altitude: Math.round(alt / 1000),
-            isMilitary: isMil,
-          }
+function propagateSatellites(){
+  if(!satelliteTLEs.length)return;
+  const now=new Date(),gmst=satellite.gstime(now);
+  satelliteTLEs.forEach((sat,i)=>{
+    try{
+      const pv=satellite.propagate(sat.satrec,now);
+      if(!pv||!pv.position)return;
+      const geo=satellite.eciToGeodetic(pv.position,gmst);
+      const lon=satellite.degreesLong(geo.longitude);
+      const lat=satellite.degreesLat(geo.latitude);
+      const alt=geo.height*1000;
+      if(isNaN(lon)||isNaN(lat)||isNaN(alt)||alt<0)return;
+      const isMil=/USA |KH-|LACROSSE|NROL|KEYHOLE|ONYX/.test(sat.name.toUpperCase());
+      const id='sat_'+i;
+      if(satelliteMap[id]){
+        satelliteMap[id].position=Cesium.Cartesian3.fromDegrees(lon,lat,alt);
+      }else{
+        const c=isMil?Cesium.Color.RED:Cesium.Color.fromCssColorString('#fbbf24');
+        satelliteMap[id]=viewer.entities.add({
+          id,name:sat.name,
+          position:Cesium.Cartesian3.fromDegrees(lon,lat,alt),
+          show:layers.satellites,
+          billboard:{image:isMil?ICO.milSat:ICO.sat,width:18,height:18,
+            scaleByDistance:new Cesium.NearFarScalar(5e5,1.4,2e7,0.3),
+            disableDepthTestDistance:2e7},
+          label:{text:sat.name.substring(0,12),font:'10px Inter,system-ui',
+            fillColor:c,outlineColor:Cesium.Color.BLACK,outlineWidth:2,
+            style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+            pixelOffset:new Cesium.Cartesian2(12,-2),
+            scaleByDistance:new Cesium.NearFarScalar(5e5,1.0,5e6,0.0),
+            disableDepthTestDistance:2e7},
+          properties:{entityType:'satellite',satName:sat.name,altitude:Math.round(alt/1000),isMilitary:isMil}
         });
       }
-    } catch (_) {}
+    }catch(_){}
   });
 }
 
-// ================================================================
-// CCTV CAMERA MARKERS — Austin public traffic cameras
-// ================================================================
-function addCCTVMarkers() {
-  const cams = [
-    { name:'CAM-001: I-35 & MLK',     lat:30.2849, lon:-97.7341 },
-    { name:'CAM-002: Barton Springs',  lat:30.2626, lon:-97.7708 },
-    { name:'CAM-003: Airport Blvd',    lat:30.2977, lon:-97.7098 },
-    { name:'CAM-004: Loop 1 & 183',    lat:30.3844, lon:-97.7471 },
-    { name:'CAM-005: Congress & 6th',  lat:30.2682, lon:-97.7404 },
-    { name:'CAM-006: 6th & Lamar',     lat:30.2707, lon:-97.7538 },
-    { name:'CAM-007: 183 & Burnet',    lat:30.3506, lon:-97.7446 },
-    { name:'CAM-008: S. 1st & Ben White',lat:30.2310,lon:-97.7671},
-  ];
+// ═══════════════════════════════════════════════════════════════
+// NAVAL VESSELS
+// ═══════════════════════════════════════════════════════════════
+const DEMO_VESSELS=[
+  // Warships
+  {id:'V1', type:'warship',name:'USS Gerald R. Ford',cs:'CVN-78',  lat:36.0, lon:-67.0, hdg:120,spd:15},
+  {id:'V2', type:'warship',name:'USS Eisenhower',    cs:'CVN-69',  lat:29.5, lon: 33.2, hdg:200,spd:12},
+  {id:'V3', type:'warship',name:'HMS Prince of Wales',cs:'R09',   lat:50.2, lon: -4.5, hdg: 90,spd:10},
+  {id:'V4', type:'warship',name:'RFS Krasnodar',     cs:'B-265',  lat:43.1, lon: 30.5, hdg:270,spd: 8},
+  {id:'V5', type:'warship',name:'CNS Liaoning',      cs:'CV-16',  lat:20.5, lon:116.0, hdg:100,spd:10},
+  {id:'V6', type:'warship',name:'JMSDF Izumo',       cs:'DDH-183',lat:34.7, lon:137.2, hdg: 45,spd:12},
+  {id:'V7', type:'warship',name:'INS Vikrant',       cs:'R11',    lat:14.0, lon: 74.5, hdg:200,spd:12},
+  {id:'V8', type:'warship',name:'USS Bataan',        cs:'LHD-5',  lat:15.0, lon: 42.5, hdg:315,spd:14},
+  // Tankers
+  {id:'V10',type:'tanker', name:'Seaways Atlas',  cs:'VLCC-001',lat:27.0,lon: 57.0,hdg:135,spd:12},
+  {id:'V11',type:'tanker', name:'Maran Poseidon', cs:'VLCC-002',lat:25.5,lon: 53.5,hdg:225,spd:11},
+  {id:'V12',type:'tanker', name:'TI Europe',      cs:'ULCC-001',lat:29.0,lon: 48.5,hdg:180,spd:10},
+  {id:'V13',type:'tanker', name:'Pacific Jasmine',cs:'VLCC-003',lat: 5.0,lon:100.5,hdg: 90,spd:13},
+  {id:'V14',type:'tanker', name:'Overseas Cosmos',cs:'VLCC-004',lat:28.0,lon:-90.0,hdg:160,spd:12},
+  // Cargo
+  {id:'V20',type:'cargo',  name:'MSC Oscar',    cs:'MSC-001',lat:35.0,lon:-40.0,hdg:270,spd:14},
+  {id:'V21',type:'cargo',  name:'CSCL Globe',   cs:'CSCL-01',lat:30.0,lon:122.0,hdg: 90,spd:15},
+  {id:'V22',type:'cargo',  name:'CMA CGM Marco',cs:'CMAC-01',lat:51.0,lon:  3.0,hdg: 10,spd:13},
+  {id:'V23',type:'cargo',  name:'Evergreen Ever',cs:'EVER-01',lat:22.5,lon:120.0,hdg:180,spd:14},
+  {id:'V24',type:'cargo',  name:'HMM Algeciras',cs:'HMM-001',lat: 3.0,lon:104.0,hdg:270,spd:12},
+  // Passenger
+  {id:'V30',type:'passenger',name:'Symphony of Seas', cs:'SOS',  lat:25.8,lon:-80.2,hdg: 45,spd:10},
+  {id:'V31',type:'passenger',name:'Wonder of Seas',   cs:'WOS',  lat:43.0,lon: 14.0,hdg:180,spd: 9},
+  {id:'V32',type:'passenger',name:'MSC World Europa', cs:'MWE',  lat:36.0,lon:-  5.5,hdg:270,spd:11},
+];
 
-  cams.forEach(cam => {
-    viewer.entities.add({
-      id:   'cctv_' + cam.name,
-      name: cam.name,
-      position: Cesium.Cartesian3.fromDegrees(cam.lon, cam.lat, 20),
-      billboard: {
-        image: ICONS.cctv,
-        width: 18, height: 18,
-        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-        scaleByDistance: new Cesium.NearFarScalar(500, 1.8, 2e5, 0.3),
-        disableDepthTestDistance: 1e6,
-        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-      },
-      label: {
-        text: cam.name.split(':')[1]?.trim() || cam.name,
-        font: '11px Inter, system-ui',
-        fillColor: Cesium.Color.fromCssColorString('#c084fc'),
-        outlineColor: Cesium.Color.BLACK,
-        outlineWidth: 3,
-        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-        pixelOffset: new Cesium.Cartesian2(14, -2),
-        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-        scaleByDistance: new Cesium.NearFarScalar(500, 1.0, 5e4, 0.0),
-        disableDepthTestDistance: 1e6,
-      },
-      properties: { entityType: 'cctv', camName: cam.name }
+function loadVessels(){
+  let cW=0,cT=0,cC=0,cP=0;
+  DEMO_VESSELS.forEach(v=>{
+    if(vesselMap[v.id])return;
+    const ico=v.type==='warship'?ICO.war:v.type==='tanker'?ICO.tanker:v.type==='cargo'?ICO.cargo:ICO.pass;
+    const lc=v.type==='warship'?'#ef4444':v.type==='tanker'?'#f97316':v.type==='cargo'?'#84cc16':'#22d3ee';
+    const lk=v.type==='warship'?'war_ships':v.type==='tanker'?'oil_ships':v.type==='cargo'?'cargo_ships':'pass_ships';
+    if(v.type==='warship')cW++;else if(v.type==='tanker')cT++;else if(v.type==='cargo')cC++;else cP++;
+    vesselMap[v.id]=viewer.entities.add({
+      id:'vs_'+v.id,name:v.name,
+      position:Cesium.Cartesian3.fromDegrees(v.lon,v.lat,10),
+      show:layers[lk],
+      billboard:{image:ico,width:20,height:20,
+        heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+        scaleByDistance:new Cesium.NearFarScalar(1e4,1.5,5e6,0.3),
+        disableDepthTestDistance:1e6},
+      label:{text:v.cs,font:'10px Inter,system-ui',
+        fillColor:Cesium.Color.fromCssColorString(lc),
+        outlineColor:Cesium.Color.BLACK,outlineWidth:3,
+        style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+        pixelOffset:new Cesium.Cartesian2(13,-2),
+        heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+        scaleByDistance:new Cesium.NearFarScalar(1e4,1.0,5e5,0.0),
+        disableDepthTestDistance:1e6},
+      properties:{entityType:'vessel',vesselType:v.type,vesselName:v.name,callsign:v.cs,speed:v.spd,heading:v.hdg}
     });
   });
-
-  document.getElementById('cctvCount').textContent = cams.length + ' (AUSTIN)';
+  document.getElementById('cnt-war').textContent=cW;
+  document.getElementById('cnt-tanker').textContent=cT;
+  document.getElementById('cnt-cargo').textContent=cC;
+  document.getElementById('cnt-pass').textContent=cP;
+  document.getElementById('sr-war').textContent=cW;
+  document.getElementById('sr-tank').textContent=cT;
 }
 
-// ================================================================
-// VEHICLE PARTICLE SYSTEM — simulated road flows
-// ================================================================
-function initVehicleParticles() {
-  // Austin road corridors with waypoints [lon, lat]
-  const corridors = [
-    { name:'I-35',  pts:[[-97.733,30.185],[-97.740,30.250],[-97.741,30.330],[-97.742,30.410]] },
-    { name:'Loop1', pts:[[-97.783,30.198],[-97.781,30.265],[-97.774,30.337],[-97.762,30.393]] },
-    { name:'183',   pts:[[-97.838,30.338],[-97.781,30.346],[-97.719,30.352],[-97.662,30.358]] },
-    { name:'Hwy71', pts:[[-97.818,30.220],[-97.771,30.226],[-97.720,30.228],[-97.670,30.229]] },
+// ═══════════════════════════════════════════════════════════════
+// CONFLICT ZONES
+// ═══════════════════════════════════════════════════════════════
+const CONFLICT_ZONES=[
+  {name:'Ukraine',        lat:49.0,lon:32.0, r:380000,sev:'critical'},
+  {name:'Gaza',           lat:31.4,lon:34.4, r:45000, sev:'critical'},
+  {name:'West Bank',      lat:31.9,lon:35.2, r:80000, sev:'high'},
+  {name:'Sudan',          lat:15.5,lon:32.5, r:420000,sev:'high'},
+  {name:'Myanmar',        lat:19.0,lon:96.0, r:250000,sev:'high'},
+  {name:'Yemen',          lat:15.3,lon:44.2, r:260000,sev:'high'},
+  {name:'Syria',          lat:35.0,lon:38.0, r:210000,sev:'medium'},
+  {name:'Mali / Sahel',   lat:17.0,lon: -4.0,r:380000,sev:'medium'},
+  {name:'Somalia',        lat: 6.0,lon:45.0, r:310000,sev:'medium'},
+  {name:'DR Congo',       lat:-2.0,lon:28.0, r:430000,sev:'high'},
+  {name:'Ethiopia',       lat: 9.0,lon:39.0, r:260000,sev:'medium'},
+  {name:'Libya',          lat:27.0,lon:17.0, r:310000,sev:'low'},
+  {name:'Haiti',          lat:18.9,lon:-72.3,r:80000, sev:'medium'},
+  {name:'Iraq',           lat:33.0,lon:44.0, r:210000,sev:'low'},
+  {name:'Afghanistan',    lat:33.9,lon:67.7, r:330000,sev:'medium'},
+];
+
+function addConflictZones(){
+  const sevColor={critical:'#ef4444',high:'#f97316',medium:'#fbbf24',low:'#84cc16'};
+  CONFLICT_ZONES.forEach(z=>{
+    const c=Cesium.Color.fromCssColorString(sevColor[z.sev]);
+    const e=viewer.entities.add({
+      id:'zone_'+z.name,name:z.name,
+      position:Cesium.Cartesian3.fromDegrees(z.lon,z.lat,0),
+      show:layers.warzones,
+      ellipse:{
+        semiMajorAxis:z.r,semiMinorAxis:z.r,
+        material:c.withAlpha(0.08),
+        outline:true,
+        outlineColor:c.withAlpha(0.55),
+        outlineWidth:1.5,
+        heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+      },
+      label:{
+        text:'💥 '+z.name,font:'11px Inter,system-ui',
+        fillColor:c,outlineColor:Cesium.Color.BLACK,outlineWidth:2,
+        style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+        verticalOrigin:Cesium.VerticalOrigin.BOTTOM,
+        heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+        scaleByDistance:new Cesium.NearFarScalar(1e4,1.0,2e7,0.3),
+        disableDepthTestDistance:1e7,
+        pixelOffset:new Cesium.Cartesian2(0,-8),
+      },
+      properties:{entityType:'warzone',zoneName:z.name,severity:z.sev}
+    });
+    warzoneEntities.push(e);
+  });
+  document.getElementById('sr-zones').textContent=CONFLICT_ZONES.length;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CCTV CAMERAS — Global public cameras
+// ═══════════════════════════════════════════════════════════════
+function addCCTVMarkers(){
+  const cams=[
+    // Austin TX
+    {name:'I-35 & MLK · Austin',      lat:30.2849,lon:-97.7341},
+    {name:'Barton Springs · Austin',   lat:30.2626,lon:-97.7708},
+    {name:'Congress & 6th · Austin',   lat:30.2682,lon:-97.7404},
+    {name:'6th & Lamar · Austin',      lat:30.2707,lon:-97.7538},
+    // London
+    {name:'Tower Bridge · London',     lat:51.5055,lon:-0.0754},
+    {name:'Trafalgar Sq · London',     lat:51.5080,lon:-0.1281},
+    {name:'Piccadilly · London',       lat:51.5099,lon:-0.1356},
+    // NYC
+    {name:'Times Square · NYC',        lat:40.7580,lon:-73.9855},
+    {name:'Brooklyn Bridge · NYC',     lat:40.7061,lon:-73.9969},
+    // Tokyo
+    {name:'Shibuya Crossing · Tokyo',  lat:35.6595,lon:139.7004},
+    {name:'Shinjuku · Tokyo',          lat:35.6938,lon:139.7034},
+    // Paris
+    {name:'Eiffel Tower · Paris',      lat:48.8584,lon:  2.2945},
+    {name:'Champs-Élysées · Paris',    lat:48.8698,lon:  2.3078},
+    // Dubai
+    {name:'Burj Khalifa · Dubai',      lat:25.1972,lon: 55.2744},
+    // Sydney
+    {name:'Harbour Bridge · Sydney',   lat:-33.8523,lon:151.2108},
+    // Singapore
+    {name:'Marina Bay · Singapore',    lat:  1.2834,lon:103.8607},
   ];
+  cams.forEach(c=>{
+    const e=viewer.entities.add({
+      id:'cctv_'+c.name,name:c.name,
+      position:Cesium.Cartesian3.fromDegrees(c.lon,c.lat,20),
+      show:layers.cctv,
+      billboard:{image:ICO.cctv,width:16,height:16,
+        heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+        scaleByDistance:new Cesium.NearFarScalar(500,1.8,2e5,0.2),
+        disableDepthTestDistance:1e6,
+        verticalOrigin:Cesium.VerticalOrigin.BOTTOM},
+      label:{text:c.name,font:'10px Inter,system-ui',
+        fillColor:Cesium.Color.fromCssColorString('#c084fc'),
+        outlineColor:Cesium.Color.BLACK,outlineWidth:3,
+        style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+        pixelOffset:new Cesium.Cartesian2(13,-2),
+        heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+        scaleByDistance:new Cesium.NearFarScalar(500,1.0,5e4,0.0),
+        disableDepthTestDistance:1e6},
+      properties:{entityType:'cctv',camName:c.name}
+    });
+    cctvEntities.push(e);
+  });
+  document.getElementById('sr-cctv').textContent=cams.length;
+}
 
-  corridors.forEach(road => {
-    const n = 10;
-    for (let i = 0; i < n; i++) {
-      const t  = i / n;
-      const pi = Math.min(Math.floor(t * (road.pts.length - 1)), road.pts.length - 2);
-      const t2 = (t * (road.pts.length - 1)) - pi;
-      const p0 = road.pts[pi];
-      const p1 = road.pts[pi + 1];
-      const lon = p0[0] + (p1[0] - p0[0]) * t2;
-      const lat = p0[1] + (p1[1] - p0[1]) * t2;
-
+// ═══════════════════════════════════════════════════════════════
+// VEHICLE PARTICLES — Austin road flows
+// ═══════════════════════════════════════════════════════════════
+function initVehicleParticles(){
+  const roads=[
+    {name:'I-35',  pts:[[-97.733,30.185],[-97.740,30.250],[-97.741,30.330],[-97.742,30.410]]},
+    {name:'Loop1', pts:[[-97.783,30.198],[-97.781,30.265],[-97.774,30.337],[-97.762,30.393]]},
+    {name:'Hwy183',pts:[[-97.838,30.338],[-97.781,30.346],[-97.719,30.352],[-97.662,30.358]]},
+  ];
+  roads.forEach(road=>{
+    for(let i=0;i<8;i++){
+      const t=i/8;
+      const pi=Math.min(Math.floor(t*(road.pts.length-1)),road.pts.length-2);
+      const t2=(t*(road.pts.length-1))-pi;
+      const p0=road.pts[pi],p1=road.pts[pi+1];
       viewer.entities.add({
-        position: Cesium.Cartesian3.fromDegrees(lon, lat, 5),
-        point: {
-          pixelSize: 2,
-          color: Cesium.Color.fromCssColorString('#ff8800').withAlpha(0.75),
-          heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-          scaleByDistance: new Cesium.NearFarScalar(500, 2.5, 5e4, 0.0),
-          disableDepthTestDistance: 5000,
-        },
-        properties: { entityType: 'vehicle', road: road.name }
+        position:Cesium.Cartesian3.fromDegrees(p0[0]+(p1[0]-p0[0])*t2,p0[1]+(p1[1]-p0[1])*t2,5),
+        point:{pixelSize:2,color:Cesium.Color.fromCssColorString('#fb923c').withAlpha(0.7),
+          heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+          scaleByDistance:new Cesium.NearFarScalar(500,2.5,5e4,0.0),
+          disableDepthTestDistance:5000},
+        properties:{entityType:'vehicle',road:road.name}
       });
     }
   });
 }
 
-// ================================================================
+// ═══════════════════════════════════════════════════════════════
+// LAYER TOGGLE
+// ═══════════════════════════════════════════════════════════════
+function toggleLayer(name,on){
+  layers[name]=on;
+  if(name==='satellites'){
+    Object.values(satelliteMap).forEach(e=>e.show=on);
+  }else if(name==='warzones'){
+    warzoneEntities.forEach(e=>e.show=on);
+  }else if(name==='vectors'){
+    Object.values(vectorMap).forEach(e=>e.show=on&&layers[e._layerKey]||on);
+  }else if(name==='cctv'){
+    cctvEntities.forEach(e=>e.show=on);
+  }else if(['mil_ac','vip_ac','civ_ac'].includes(name)){
+    const map={'mil_ac':'mil','vip_ac':'vip','civ_ac':'civ'};
+    const cls=map[name];
+    Object.values(aircraftMap).forEach(e=>{
+      if(e.properties?.acClass?.getValue()===cls)e.show=on;
+    });
+    Object.values(vectorMap).forEach(e=>{
+      if(e.properties?.acClass?.getValue()===cls)e.show=on&&layers.vectors;
+    });
+  }else if(['war_ships','oil_ships','cargo_ships','pass_ships'].includes(name)){
+    const tmap={'war_ships':'warship','oil_ships':'tanker','cargo_ships':'cargo','pass_ships':'passenger'};
+    const t=tmap[name];
+    Object.values(vesselMap).forEach(e=>{
+      if(e.properties?.vesselType?.getValue()===t)e.show=on;
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // VISUAL MODES
-// ================================================================
-function setMode(mode) {
-  currentMode = mode;
-
-  // Disable all shader stages
-  Object.values(shaderStages).forEach(s => s.enabled = false);
-
-  // Hide CSS overlays
-  document.getElementById('overlay-scanlines').style.display    = 'none';
-  document.getElementById('overlay-vignette-nvg').style.display = 'none';
-  document.getElementById('overlay-anime').style.display        = 'none';
-
-  // Update button states
-  document.querySelectorAll('.mode-btn:not(#btn-god)').forEach(b => b.classList.remove('active'));
-  document.getElementById('btn-' + mode)?.classList.add('active');
-
-  switch (mode) {
-    case 'nvg':
-      shaderStages.nvg.enabled = true;
-      document.getElementById('overlay-vignette-nvg').style.display = 'block';
-      document.getElementById('modeDisplay').textContent = '🟢 Night Vision';
-      break;
-    case 'flir':
-      shaderStages.flir.enabled = true;
-      document.getElementById('modeDisplay').textContent = '🔥 Thermal';
-      break;
-    case 'crt':
-      shaderStages.crt.enabled = true;
-      document.getElementById('overlay-scanlines').style.display = 'block';
-      document.getElementById('modeDisplay').textContent = '📺 CRT';
-      break;
-    case 'anime':
-      shaderStages.anime.enabled = true;
-      document.getElementById('overlay-anime').style.display = 'block';
-      document.getElementById('modeDisplay').textContent = '✨ Anime';
-      break;
-    default:
-      document.getElementById('modeDisplay').textContent = '🌍 Standard';
-  }
+// ═══════════════════════════════════════════════════════════════
+function setMode(mode){
+  currentMode=mode;
+  Object.values(shaderStages).forEach(s=>s.enabled=false);
+  document.getElementById('ol-scan').style.display='none';
+  document.getElementById('ol-nvg').style.display='none';
+  document.getElementById('ol-anime').style.display='none';
+  document.getElementById('ol-tactical').style.display='none';
+  document.querySelectorAll('.disp-btn:not(#btn-god)').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+mode)?.classList.add('active');
+  const labels={normal:'◈ Standard',nvg:'🟢 Night Vision',flir:'🔴 FLIR Thermal',
+    crt:'📺 CRT',anime:'✨ Anime',tactical:'🔵 Tactical'};
+  document.getElementById('modeTag').textContent=labels[mode]||'◈ Standard';
+  if(mode==='nvg'){shaderStages.nvg.enabled=true;document.getElementById('ol-nvg').style.display='block';}
+  else if(mode==='flir'){shaderStages.flir.enabled=true;}
+  else if(mode==='crt'){shaderStages.crt.enabled=true;document.getElementById('ol-scan').style.display='block';}
+  else if(mode==='anime'){shaderStages.anime.enabled=true;document.getElementById('ol-anime').style.display='block';}
+  else if(mode==='tactical'){shaderStages.tactical.enabled=true;document.getElementById('ol-tactical').style.display='block';}
 }
 
-// ================================================================
+// ═══════════════════════════════════════════════════════════════
 // GOD MODE
-// ================================================================
-function toggleGodMode() {
-  godModeOn = !godModeOn;
-  const btn     = document.getElementById('btn-god');
-  const reticle = document.getElementById('reticle');
-
-  if (godModeOn) {
-    btn.classList.add('god-on');
-    btn.textContent = '⚡ GOD ON';
-    reticle.style.display = 'block';
-
-    Object.values(aircraftMap).forEach(e => {
-      if (e.billboard) e.billboard.color = Cesium.Color.RED;
-    });
-    Object.values(satelliteMap).forEach(e => {
-      if (e.billboard) e.billboard.color = Cesium.Color.fromCssColorString('#ff6600');
-    });
-
-    const ac  = Object.keys(aircraftMap).length;
-    const sat = Object.keys(satelliteMap).length;
-    notify(`PANOPTIC VIEW — TRACKING ${ac} AIRCRAFT + ${sat} SATELLITES`, true);
-  } else {
-    btn.classList.remove('god-on');
-    btn.textContent = '⚡ God Mode';
-    reticle.style.display = 'none';
-
-    Object.values(aircraftMap).forEach(e => {
-      if (e.billboard) e.billboard.color = Cesium.Color.WHITE;
-    });
-    Object.values(satelliteMap).forEach(e => {
-      if (e.billboard) e.billboard.color = Cesium.Color.WHITE;
-    });
+// ═══════════════════════════════════════════════════════════════
+function toggleGodMode(){
+  godModeOn=!godModeOn;
+  const btn=document.getElementById('btn-god');
+  const reticle=document.getElementById('reticle');
+  const status=document.getElementById('god-status');
+  if(godModeOn){
+    btn.classList.add('god-on');btn.textContent='⚡ GOD MODE ON';
+    reticle.style.display='block';status.style.display='block';
+    Object.values(aircraftMap).forEach(e=>{if(e.billboard)e.billboard.color=Cesium.Color.RED;});
+    Object.values(vesselMap).forEach(e=>{if(e.billboard)e.billboard.color=Cesium.Color.fromCssColorString('#ff6600');});
+    const n=Object.keys(aircraftMap).length+Object.keys(vesselMap).length+Object.keys(satelliteMap).length;
+    notify('⚡ GOD MODE — '+n+' assets tracked',true);
+  }else{
+    btn.classList.remove('god-on');btn.textContent='⚡ God Mode';
+    reticle.style.display='none';status.style.display='none';
+    Object.values(aircraftMap).forEach(e=>{if(e.billboard)e.billboard.color=Cesium.Color.WHITE;});
+    Object.values(vesselMap).forEach(e=>{if(e.billboard)e.billboard.color=Cesium.Color.WHITE;});
   }
 }
 
-// ================================================================
-// SIDEBAR TOGGLE
-// ================================================================
-let sidebarOpen = true;
-function toggleSidebar() {
-  sidebarOpen = !sidebarOpen;
-  const sb  = document.getElementById('sidebar');
-  const btn = document.getElementById('sidebarToggle');
-  if (sidebarOpen) {
-    sb.classList.remove('hidden');
-    btn.style.right = '268px';
-    btn.textContent = '⊞';
-  } else {
-    sb.classList.add('hidden');
-    btn.style.right = '16px';
-    btn.textContent = '⊟';
-  }
+// ═══════════════════════════════════════════════════════════════
+// INTEL PANEL
+// ═══════════════════════════════════════════════════════════════
+function toggleIntelPanel(){
+  intelOpen=!intelOpen;
+  const p=document.getElementById('intelPanel');
+  const b=document.getElementById('toggleIntel');
+  if(intelOpen){p.classList.remove('hidden');b.style.right='244px';b.textContent='⊞';}
+  else{p.classList.add('hidden');b.style.right='12px';b.textContent='⊟';}
 }
 
-// ================================================================
-// ENTITY CLICK — target intel panel
-// ================================================================
-function initClickHandler() {
-  const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-  handler.setInputAction(ev => {
-    const picked = viewer.scene.pick(ev.position);
-    if (!Cesium.defined(picked) || !Cesium.defined(picked.id)) return;
-
-    const entity = picked.id;
-    const props  = entity.properties;
-    if (!props) return;
-    const type = props.entityType?.getValue();
-
-    let html = '';
-    if (type === 'aircraft') {
-      const cs  = props.callsign?.getValue() || '---';
-      const alt = props.altitude?.getValue() || 0;
-      const spd = props.speed?.getValue()    || 0;
-      const hdg = props.heading?.getValue()  || 0;
-      const ctry= props.country?.getValue()  || 'Unknown';
-      const icao= props.icao?.getValue()     || '---';
-      html = `<span class="t-name">✈ ${cs}</span>
-        <span style="color:var(--aircraft);font-size:10px;font-weight:600">AIRCRAFT</span><br><br>
-        ICAO &nbsp;&nbsp; ${icao}<br>
-        Alt &nbsp;&nbsp;&nbsp;&nbsp; ${Math.round(alt).toLocaleString()} m<br>
-        Speed &nbsp;&nbsp; ${Math.round(spd)} m/s<br>
-        Heading &nbsp; ${Math.round(hdg)}°<br>
-        Origin &nbsp;&nbsp; ${ctry}`;
-    } else if (type === 'satellite') {
-      const name = props.satName?.getValue()  || entity.name;
-      const alt  = props.altitude?.getValue() || 0;
-      const mil  = props.isMilitary?.getValue();
-      html = `<span class="t-name">🛰 ${name}</span>
-        <span style="color:${mil ? 'var(--danger)' : 'var(--satellite)'};font-size:10px;font-weight:600">${mil ? 'MILITARY SAT' : 'SATELLITE'}</span><br><br>
-        Altitude &nbsp; ${Math.round(alt).toLocaleString()} km<br>
-        Class &nbsp;&nbsp;&nbsp;&nbsp; ${mil ? 'Classified' : 'Civilian'}`;
-    } else if (type === 'cctv') {
-      const name = props.camName?.getValue() || entity.name;
-      html = `<span class="t-name">📷 ${name}</span>
-        <span style="color:var(--cctv);font-size:10px;font-weight:600">CCTV NODE</span><br><br>
-        Status &nbsp;&nbsp;&nbsp; <span style="color:#22c55e">Live</span><br>
-        Feed &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Public Traffic<br>
-        Location &nbsp; Austin, TX`;
-    } else if (type === 'vehicle') {
-      html = `<span class="t-name">🚗 Vehicle</span>
-        Road &nbsp;&nbsp; ${props.road?.getValue() || 'Unknown'}<br>
+// ═══════════════════════════════════════════════════════════════
+// CLICK HANDLER
+// ═══════════════════════════════════════════════════════════════
+function initClickHandler(){
+  const h=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+  h.setInputAction(ev=>{
+    const pk=viewer.scene.pick(ev.position);
+    if(!Cesium.defined(pk)||!Cesium.defined(pk.id))return;
+    const e=pk.id,p=e.properties;
+    if(!p)return;
+    const t=p.entityType?.getValue();
+    let html='';
+    if(t==='aircraft'){
+      const cls=p.acClass?.getValue()||'civ';
+      const badge=cls==='mil'?'🎖️ Military':cls==='vip'?'⭐ VIP':'✈ Civilian';
+      const bc=cls==='mil'?'var(--c-mil)':cls==='vip'?'var(--c-vip)':'var(--c-civ)';
+      html=`<span class="t-name">✈ ${p.callsign?.getValue()||'—'}</span>
+        <span style="color:${bc};font-size:10px;font-weight:700">${badge}</span><br><br>
+        ICAO &nbsp;&nbsp; ${p.icao?.getValue()||'—'}<br>
+        Alt &nbsp;&nbsp;&nbsp;&nbsp; ${(p.altitude?.getValue()||0).toLocaleString()} m<br>
+        Speed &nbsp;&nbsp; ${p.speed?.getValue()||0} m/s<br>
+        Heading &nbsp; ${p.heading?.getValue()||0}°<br>
+        Origin &nbsp;&nbsp; ${p.country?.getValue()||'Unknown'}`;
+    }else if(t==='satellite'){
+      const mil=p.isMilitary?.getValue();
+      html=`<span class="t-name">🛰️ ${p.satName?.getValue()||e.name}</span>
+        <span style="color:${mil?'var(--c-war)':'var(--c-sat)'};font-size:10px;font-weight:700">${mil?'⚠️ Military':'Civilian'}</span><br><br>
+        Altitude &nbsp; ${(p.altitude?.getValue()||0).toLocaleString()} km<br>
+        Orbit &nbsp;&nbsp;&nbsp;&nbsp; ${(p.altitude?.getValue()||0)<2000?'LEO':'Higher orbit'}`;
+    }else if(t==='vessel'){
+      const vt=p.vesselType?.getValue()||'vessel';
+      const badge=vt==='warship'?'⚔️ Warship':vt==='tanker'?'🛢️ Tanker':vt==='cargo'?'📦 Cargo':'🚢 Passenger';
+      html=`<span class="t-name">${badge}</span>
+        <b style="color:var(--text)">${p.vesselName?.getValue()||e.name}</b><br>
+        Callsign &nbsp; ${p.callsign?.getValue()||'—'}<br>
+        Speed &nbsp;&nbsp;&nbsp;&nbsp; ${p.speed?.getValue()||0} kts<br>
+        Heading &nbsp;&nbsp; ${p.heading?.getValue()||0}°`;
+    }else if(t==='cctv'){
+      html=`<span class="t-name">📷 CCTV</span>
+        <b style="color:var(--text)">${p.camName?.getValue()||e.name}</b><br>
+        Status &nbsp;&nbsp; <span style="color:#22c55e">● Live</span><br>
+        Feed &nbsp;&nbsp;&nbsp;&nbsp; Public Traffic<br>
+        Access &nbsp;&nbsp; Open`;
+    }else if(t==='warzone'){
+      const sev=p.severity?.getValue()||'—';
+      const sc={critical:'#ef4444',high:'#f97316',medium:'#fbbf24',low:'#84cc16'};
+      html=`<span class="t-name">💥 Conflict Zone</span>
+        <b style="color:var(--text)">${p.zoneName?.getValue()||e.name}</b><br>
+        Severity &nbsp; <span style="color:${sc[sev]||'#fff'};font-weight:700">${sev.toUpperCase()}</span><br>
+        Source &nbsp;&nbsp;&nbsp; ACLED / UNOCHA`;
+    }else if(t==='vehicle'){
+      html=`<span class="t-name">🚗 Vehicle</span>
+        Road &nbsp;&nbsp; ${p.road?.getValue()||'Unknown'}<br>
         Status &nbsp; In Transit`;
     }
-
-    if (html) {
-      document.getElementById('targetInfo').innerHTML = html;
+    if(html){
+      document.getElementById('targetInfo').innerHTML=html;
+      if(!intelOpen)toggleIntelPanel();
     }
-  }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+  },Cesium.ScreenSpaceEventType.LEFT_CLICK);
 }
 
-// ================================================================
-// COORDINATE / CLOCK HUD
-// ================================================================
-function startHUDUpdates() {
-  // Camera coords
-  viewer.scene.postRender.addEventListener(() => {
-    const carto = viewer.scene.camera.positionCartographic;
-    if (!carto) return;
-    const lon = Cesium.Math.toDegrees(carto.longitude).toFixed(4);
-    const lat = Cesium.Math.toDegrees(carto.latitude).toFixed(4);
-    const alt = carto.height;
-    const altStr = alt >= 1000 ? (alt / 1000).toFixed(1) + ' km' : Math.round(alt) + ' m';
-    document.getElementById('coordDisplay').textContent = `${lat}, ${lon}`;
-    document.getElementById('altDisplay').textContent   = altStr;
+// ═══════════════════════════════════════════════════════════════
+// HUD — coords + clock
+// ═══════════════════════════════════════════════════════════════
+function startHUDUpdates(){
+  viewer.scene.postRender.addEventListener(()=>{
+    const c=viewer.scene.camera.positionCartographic;
+    if(!c)return;
+    const lon=Cesium.Math.toDegrees(c.longitude).toFixed(4);
+    const lat=Cesium.Math.toDegrees(c.latitude).toFixed(4);
+    const alt=c.height;
+    document.getElementById('coordDisplay').textContent=`${lat}, ${lon}`;
+    document.getElementById('altDisplay').textContent=alt>=1000?(alt/1000).toFixed(1)+' km':Math.round(alt)+' m';
   });
-
-  // Clock
-  setInterval(() => {
-    const now = new Date();
-    const utc = now.toUTCString().split(' ')[4];
-    const loc = now.toLocaleTimeString();
-    const date = now.toISOString().split('T')[0];
-    document.getElementById('clock').innerHTML =
-      `<span style="color:var(--muted);font-size:10px">UTC</span>&nbsp; ${utc}<br><span style="color:var(--muted);font-size:10px">LOCAL</span>&nbsp; ${loc}<br><span style="color:var(--muted);font-size:10px">DATE</span>&nbsp; ${date}`;
-  }, 1000);
+  setInterval(()=>{
+    const n=new Date();
+    document.getElementById('clock').innerHTML=
+      `<span style="color:var(--muted);font-size:9px">UTC</span> ${n.toUTCString().split(' ')[4]}<br>`+
+      `<span style="color:var(--muted);font-size:9px">LOCAL</span> ${n.toLocaleTimeString()}<br>`+
+      `<span style="color:var(--muted);font-size:9px">DATE</span> ${n.toISOString().split('T')[0]}`;
+  },1000);
 }
 
-// ================================================================
+// ═══════════════════════════════════════════════════════════════
 // KEYBOARD SHORTCUTS
-// ================================================================
-document.addEventListener('keydown', e => {
-  switch (e.key) {
-    case '1': setMode('normal'); break;
-    case '2': setMode('nvg');   break;
-    case '3': setMode('flir');  break;
-    case '4': setMode('crt');   break;
-    case '5': setMode('anime'); break;
-    case 'g':
-    case 'G': toggleGodMode();  break;
-  }
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  const k={
+    '1':()=>setMode('normal'),'2':()=>setMode('nvg'),'3':()=>setMode('flir'),
+    '4':()=>setMode('crt'),  '5':()=>setMode('anime'),'6':()=>setMode('tactical'),
+    'g':toggleGodMode,'G':toggleGodMode,
+    'i':toggleIntelPanel,'I':toggleIntelPanel,
+  };
+  k[e.key]?.();
 });
 
-// ================================================================
-// NOTIFICATIONS
-// ================================================================
-function notify(text, isRed = false) {
-  const el = document.createElement('div');
-  el.className = 'notif' + (isRed ? ' red' : '');
-  el.textContent = text;
-  document.getElementById('hud').appendChild(el);
-  setTimeout(() => el.remove(), 3500);
+// ═══════════════════════════════════════════════════════════════
+// NOTIFY
+// ═══════════════════════════════════════════════════════════════
+function notify(text,red=false){
+  const el=document.createElement('div');
+  el.className='notif'+(red?' red':'');
+  el.textContent=text;
+  document.getElementById('topbar').parentElement.appendChild(el);
+  setTimeout(()=>el.remove(),3500);
 }
 
-// ================================================================
-// GOOGLE 3D TILES (optional — needs API key)
-// ================================================================
-async function tryLoad3DTiles() {
-  if (!CFG.GOOGLE_MAPS_KEY) return;
-  try {
-    const tileset = await Cesium.Cesium3DTileset.fromUrl(
-      `https://tile.googleapis.com/v1/3dtiles/root.json?key=${CFG.GOOGLE_MAPS_KEY}`
-    );
-    viewer.scene.primitives.add(tileset);
-    notify('GOOGLE 3D PHOTOREALISTIC TILES — ONLINE');
-  } catch (e) {
-    console.warn('[Google 3D Tiles]', e.message);
-  }
+// ═══════════════════════════════════════════════════════════════
+// GOOGLE 3D TILES (optional)
+// ═══════════════════════════════════════════════════════════════
+async function tryLoad3DTiles(){
+  if(!CFG.GOOGLE_MAPS_KEY)return;
+  try{
+    const ts=await Cesium.Cesium3DTileset.fromUrl(
+      `https://tile.googleapis.com/v1/3dtiles/root.json?key=${CFG.GOOGLE_MAPS_KEY}`);
+    viewer.scene.primitives.add(ts);
+    notify('🗺️ Google 3D Tiles online');
+  }catch(e){}
 }
 
-// ================================================================
-// MAIN — boot sequence
-// ================================================================
-function hideLoader() {
-  const el = document.getElementById('loading');
-  el.style.transition = 'opacity 0.6s';
-  el.style.opacity = '0';
-  setTimeout(() => el.style.display = 'none', 700);
+// ═══════════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════════
+function hideLoader(){
+  const el=document.getElementById('loading');
+  el.style.transition='opacity 0.6s';el.style.opacity='0';
+  setTimeout(()=>el.style.display='none',700);
 }
 
-(async () => {
-  // --- Phase 1: get the globe on screen ASAP ---
-  setLoad(10, 'BOOTING CESIUMJS...');
-  try { initCesium(); } catch(e) { console.error('[Cesium init]', e); }
+(async()=>{
+  setLoad(8,'Booting CesiumJS...');
+  try{initCesium();}catch(e){console.error('[Cesium]',e);}
 
-  setLoad(40, 'COMPILING SHADERS...');
-  await new Promise(r => setTimeout(r, 500));
-  try { initShaders(); } catch(e) { console.error('[Shaders]', e); }
+  setLoad(30,'Compiling shaders...');
+  await new Promise(r=>setTimeout(r,500));
+  try{initShaders();}catch(e){console.error('[Shaders]',e);}
 
-  setLoad(70, 'WIRING HUD...');
-  try { addCCTVMarkers(); }    catch(e) {}
-  try { initVehicleParticles(); } catch(e) {}
-  try { initClickHandler(); }  catch(e) {}
-  try { startHUDUpdates(); }   catch(e) {}
+  setLoad(50,'Building world layers...');
+  try{addConflictZones();}catch(e){}
+  try{addCCTVMarkers();}catch(e){}
+  try{loadVessels();}catch(e){}
+  try{initVehicleParticles();}catch(e){}
+  try{initClickHandler();}catch(e){}
+  try{startHUDUpdates();}catch(e){}
 
-  setLoad(100, 'ALL SYSTEMS NOMINAL');
-  await new Promise(r => setTimeout(r, 400));
+  setLoad(85,'Wiring HUD...');
+  await new Promise(r=>setTimeout(r,300));
+  setLoad(100,'All systems nominal');
+  await new Promise(r=>setTimeout(r,350));
   hideLoader();
-  notify('WORLDVIEW ONLINE');
+  notify('🌍 WorldView online');
 
-  // --- Phase 2: load live data in background (non-blocking) ---
-  fetchSatellites().then(() => {
+  // Background data loads
+  fetchSatellites().then(()=>{
     propagateSatellites();
-    setInterval(propagateSatellites, CFG.SATELLITE_UPDATE_MS);
+    setInterval(propagateSatellites,CFG.SATELLITE_UPDATE_MS);
   }).catch(console.warn);
 
   fetchAircraft().catch(console.warn);
-  setInterval(fetchAircraft, CFG.FLIGHT_UPDATE_MS);
+  setInterval(fetchAircraft,CFG.FLIGHT_UPDATE_MS);
 
-  tryLoad3DTiles().catch(console.warn);
+  tryLoad3DTiles().catch(()=>{});
 })();
 </script>
 </body>
