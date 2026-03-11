@@ -1149,48 +1149,43 @@ async function tryLoad3DTiles() {
 // ================================================================
 // MAIN — boot sequence
 // ================================================================
+function hideLoader() {
+  const el = document.getElementById('loading');
+  el.style.transition = 'opacity 0.6s';
+  el.style.opacity = '0';
+  setTimeout(() => el.style.display = 'none', 700);
+}
+
 (async () => {
-  setLoad(5,  'BOOTING CESIUMJS...');
-  initCesium();
+  // --- Phase 1: get the globe on screen ASAP ---
+  setLoad(10, 'BOOTING CESIUMJS...');
+  try { initCesium(); } catch(e) { console.error('[Cesium init]', e); }
 
-  setLoad(20, 'COMPILING SHADERS...');
-  // Small delay so Cesium scene is ready
-  await new Promise(r => setTimeout(r, 800));
-  initShaders();
+  setLoad(40, 'COMPILING SHADERS...');
+  await new Promise(r => setTimeout(r, 500));
+  try { initShaders(); } catch(e) { console.error('[Shaders]', e); }
 
-  setLoad(35, 'FETCHING SATELLITE TLEs...');
-  await fetchSatellites();
-
-  setLoad(55, 'FETCHING LIVE FLIGHT DATA...');
-  await fetchAircraft();
-
-  setLoad(70, 'LOADING GOOGLE 3D TILES...');
-  await tryLoad3DTiles();
-
-  setLoad(82, 'PLACING CCTV NODES...');
-  addCCTVMarkers();
-
-  setLoad(90, 'INITIALIZING VEHICLE PARTICLES...');
-  initVehicleParticles();
-
-  setLoad(96, 'WIRING HUD...');
-  initClickHandler();
-  startHUDUpdates();
-
-  // Start real-time loops
-  setInterval(propagateSatellites, CFG.SATELLITE_UPDATE_MS);
-  setInterval(fetchAircraft,       CFG.FLIGHT_UPDATE_MS);
-  propagateSatellites(); // first tick
+  setLoad(70, 'WIRING HUD...');
+  try { addCCTVMarkers(); }    catch(e) {}
+  try { initVehicleParticles(); } catch(e) {}
+  try { initClickHandler(); }  catch(e) {}
+  try { startHUDUpdates(); }   catch(e) {}
 
   setLoad(100, 'ALL SYSTEMS NOMINAL');
-  await new Promise(r => setTimeout(r, 600));
+  await new Promise(r => setTimeout(r, 400));
+  hideLoader();
+  notify('WORLDVIEW ONLINE');
 
-  // Hide loading screen
-  document.getElementById('loading').style.transition = 'opacity 0.8s';
-  document.getElementById('loading').style.opacity = '0';
-  setTimeout(() => document.getElementById('loading').style.display = 'none', 900);
+  // --- Phase 2: load live data in background (non-blocking) ---
+  fetchSatellites().then(() => {
+    propagateSatellites();
+    setInterval(propagateSatellites, CFG.SATELLITE_UPDATE_MS);
+  }).catch(console.warn);
 
-  notify('WORLDVIEW ONLINE — SPATIAL INTELLIGENCE PLATFORM ACTIVE');
+  fetchAircraft().catch(console.warn);
+  setInterval(fetchAircraft, CFG.FLIGHT_UPDATE_MS);
+
+  tryLoad3DTiles().catch(console.warn);
 })();
 </script>
 </body>
