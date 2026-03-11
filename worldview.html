@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WORLDVIEW — Spatial Intelligence Platform</title>
+
+<!-- CesiumJS -->
+<script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
+<link href="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+
+<!-- satellite.js for TLE orbital propagation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.1.4/satellite.min.js"></script>
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #000;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+}
+
+#cesiumContainer {
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Hide default Cesium UI chrome */
+.cesium-widget-credits,
+.cesium-viewer-bottom { display: none !important; }
+
+/* ===== HUD ===== */
+#hud {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* Corner brackets */
+.corner { position: absolute; width: 24px; height: 24px; }
+.corner-tl { top: 10px; left: 10px; border-top: 2px solid #00ff41; border-left: 2px solid #00ff41; }
+.corner-tr { top: 10px; right: 10px; border-top: 2px solid #00ff41; border-right: 2px solid #00ff41; }
+.corner-bl { bottom: 10px; left: 10px; border-bottom: 2px solid #00ff41; border-left: 2px solid #00ff41; }
+.corner-br { bottom: 10px; right: 10px; border-bottom: 2px solid #00ff41; border-right: 2px solid #00ff41; }
+
+/* Top bar */
+#topbar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 22px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, transparent 100%);
+}
+
+.logo {
+  color: #00ff41;
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 6px;
+  text-shadow: 0 0 12px #00ff41;
+}
+
+.hud-text {
+  color: #00ff41;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-shadow: 0 0 6px rgba(0,255,65,0.5);
+}
+
+/* Side panel */
+#dataPanel {
+  position: absolute;
+  top: 58px;
+  right: 18px;
+  width: 210px;
+  background: rgba(0,0,0,0.82);
+  border: 1px solid rgba(0,255,65,0.35);
+  padding: 12px;
+}
+
+.panel-title {
+  color: #00ff41;
+  font-size: 9px;
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(0,255,65,0.25);
+}
+
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.data-label { color: rgba(0,255,65,0.55); font-size: 9px; letter-spacing: 1px; }
+.data-value { color: #00ff41; font-size: 9px; letter-spacing: 1px; }
+
+#targetInfo {
+  color: rgba(0,255,65,0.5);
+  font-size: 9px;
+  letter-spacing: 1px;
+  line-height: 1.7;
+}
+
+/* Left info */
+#leftPanel {
+  position: absolute;
+  top: 58px;
+  left: 18px;
+}
+
+#clock {
+  color: #00ff41;
+  font-size: 10px;
+  letter-spacing: 2px;
+  line-height: 1.8;
+  text-shadow: 0 0 6px rgba(0,255,65,0.4);
+}
+
+/* Mode controls */
+#controls {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  pointer-events: all;
+  background: rgba(0,0,0,0.6);
+  padding: 10px 14px;
+  border: 1px solid rgba(0,255,65,0.2);
+}
+
+.mode-btn {
+  background: transparent;
+  border: 1px solid rgba(0,255,65,0.3);
+  color: rgba(0,255,65,0.7);
+  padding: 7px 14px;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+.mode-btn:hover {
+  background: rgba(0,255,65,0.08);
+  border-color: #00ff41;
+  color: #00ff41;
+  box-shadow: 0 0 10px rgba(0,255,65,0.2);
+}
+
+.mode-btn.active {
+  background: rgba(0,255,65,0.12);
+  border-color: #00ff41;
+  color: #00ff41;
+  box-shadow: 0 0 8px rgba(0,255,65,0.3);
+}
+
+.mode-btn.god-on {
+  border-color: #ff3333;
+  color: #ff3333;
+  box-shadow: 0 0 12px rgba(255,51,51,0.4);
+  animation: godPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes godPulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(255,51,51,0.4); }
+  50% { box-shadow: 0 0 22px rgba(255,51,51,0.7); }
+}
+
+/* Crosshair / reticle */
+#reticle {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+  pointer-events: none;
+}
+
+/* Post-process CSS overlays */
+#overlay-scanlines {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  display: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.18) 2px,
+    rgba(0,0,0,0.18) 4px
+  );
+}
+
+#overlay-vignette-nvg {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  display: none;
+  background: radial-gradient(ellipse at center, transparent 52%, rgba(0,18,0,0.88) 100%);
+}
+
+#overlay-anime {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  display: none;
+  border: 10px solid rgba(255,150,200,0.25);
+  box-shadow: inset 0 0 60px rgba(255,100,180,0.08);
+}
+
+/* Notification */
+.notif {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.9);
+  border: 1px solid #00ff41;
+  color: #00ff41;
+  padding: 8px 22px;
+  font-size: 10px;
+  letter-spacing: 2px;
+  animation: notifAnim 3.2s forwards;
+  white-space: nowrap;
+}
+
+.notif.red {
+  border-color: #ff3333;
+  color: #ff3333;
+}
+
+@keyframes notifAnim {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+  12%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  75%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Loading screen */
+#loading {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.load-logo {
+  color: #00ff41;
+  font-size: 28px;
+  letter-spacing: 10px;
+  text-shadow: 0 0 20px #00ff41;
+  margin-bottom: 30px;
+}
+
+.load-bar-wrap {
+  width: 300px;
+  height: 2px;
+  background: rgba(0,255,65,0.15);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.load-bar {
+  height: 100%;
+  background: #00ff41;
+  box-shadow: 0 0 10px #00ff41;
+  width: 0%;
+  transition: width 0.4s ease;
+}
+
+.load-status {
+  color: rgba(0,255,65,0.7);
+  font-size: 10px;
+  letter-spacing: 3px;
+  height: 20px;
+}
+
+/* Keys hint */
+#keyhints {
+  position: absolute;
+  bottom: 80px;
+  left: 18px;
+  color: rgba(0,255,65,0.3);
+  font-size: 9px;
+  letter-spacing: 1px;
+  line-height: 1.8;
+}
+</style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div id="loading">
+  <div class="load-logo">WORLDVIEW</div>
+  <div class="load-bar-wrap"><div class="load-bar" id="loadBar"></div></div>
+  <div class="load-status" id="loadStatus">INITIALIZING...</div>
+</div>
+
+<div id="cesiumContainer"></div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+
+  <!-- Top bar -->
+  <div id="topbar">
+    <div class="logo">WORLDVIEW</div>
+    <div class="hud-text" id="coordDisplay">LAT: -.---- LON: -.----</div>
+    <div class="hud-text" id="altDisplay">ALT: ---</div>
+    <div class="hud-text" id="modeDisplay">MODE: STANDARD</div>
+  </div>
+
+  <!-- Left panel -->
+  <div id="leftPanel">
+    <div id="clock"></div>
+  </div>
+
+  <!-- Right data panel -->
+  <div id="dataPanel">
+    <div class="panel-title">LIVE INTELLIGENCE</div>
+    <div class="data-row">
+      <span class="data-label">AIRCRAFT</span>
+      <span class="data-value" id="aircraftCount">---</span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">SATELLITES</span>
+      <span class="data-value" id="satelliteCount">---</span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">CCTV NODES</span>
+      <span class="data-value" id="cctvCount">---</span>
+    </div>
+    <div class="data-row">
+      <span class="data-label">DATA FEED</span>
+      <span class="data-value" id="lastUpdate">OFFLINE</span>
+    </div>
+    <div style="border-top:1px solid rgba(0,255,65,0.2);margin:10px 0 8px;"></div>
+    <div class="panel-title" style="margin-top:0">SELECTED TARGET</div>
+    <div id="targetInfo">NO TARGET SELECTED</div>
+  </div>
+
+  <!-- Mode controls -->
+  <div id="controls">
+    <button class="mode-btn active" id="btn-normal"  onclick="setMode('normal')">STANDARD</button>
+    <button class="mode-btn"        id="btn-nvg"     onclick="setMode('nvg')">NVG</button>
+    <button class="mode-btn"        id="btn-flir"    onclick="setMode('flir')">FLIR</button>
+    <button class="mode-btn"        id="btn-crt"     onclick="setMode('crt')">CRT</button>
+    <button class="mode-btn"        id="btn-anime"   onclick="setMode('anime')">ANIME</button>
+    <button class="mode-btn"        id="btn-god"     onclick="toggleGodMode()">GOD MODE</button>
+  </div>
+
+  <!-- CSS overlays -->
+  <div id="overlay-scanlines"></div>
+  <div id="overlay-vignette-nvg"></div>
+  <div id="overlay-anime"></div>
+
+  <!-- Targeting reticle (God Mode) -->
+  <div id="reticle">
+    <svg width="130" height="130" viewBox="0 0 130 130">
+      <circle cx="65" cy="65" r="55" fill="none" stroke="#ff3333" stroke-width="1" stroke-dasharray="5 5" opacity="0.7"/>
+      <circle cx="65" cy="65" r="6"  fill="none" stroke="#ff3333" stroke-width="1.5"/>
+      <line x1="65" y1="0"   x2="65" y2="53"  stroke="#ff3333" stroke-width="1" opacity="0.7"/>
+      <line x1="65" y1="77"  x2="65" y2="130" stroke="#ff3333" stroke-width="1" opacity="0.7"/>
+      <line x1="0"   y1="65" x2="53" y2="65"  stroke="#ff3333" stroke-width="1" opacity="0.7"/>
+      <line x1="77"  y1="65" x2="130" y2="65" stroke="#ff3333" stroke-width="1" opacity="0.7"/>
+      <text x="70" y="20" fill="#ff3333" font-family="Courier New" font-size="8" letter-spacing="2">TRACKING</text>
+    </svg>
+  </div>
+
+  <!-- Keyboard hints -->
+  <div id="keyhints">
+    [1] STANDARD  [2] NVG  [3] FLIR  [4] CRT  [5] ANIME  [G] GOD MODE<br>
+    CLICK ENTITY FOR INTEL · SCROLL TO ZOOM · DRAG TO ORBIT
+  </div>
+</div>
+
+<script>
+// ================================================================
+// CONFIGURATION
+// ================================================================
+const CFG = {
+  // Free token: https://ion.cesium.com/tokens
+  CESIUM_TOKEN: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlYWE1OWUxNy1mMDA1LTQzNzYtODc4OS05MDhjNDQwMjQ1MjIiLCJpZCI6NTc3OTUsImlhdCI6MTYyNjYwMzYwNn0.1FNiClcJ8fEHf6BNYF0GnELGBvqXRCtGAGTq_HKPQNQ',
+
+  // Free key: https://developers.google.com/maps/documentation/tile
+  GOOGLE_MAPS_KEY: '',   // leave blank to skip Google 3D tiles
+
+  OPENSKY_URL:    'https://opensky-network.org/api/states/all',
+  CELESTRAK_URL:  'https://celestrak.org/NORAD/elements/gp.php',
+
+  FLIGHT_UPDATE_MS:    45000,  // 45 s (OpenSky free tier)
+  SATELLITE_UPDATE_MS: 1000,   // 1 s (computed locally from TLE)
+};
+
+// ================================================================
+// SHADERS — GLSL fragment shaders for CesiumJS PostProcessStage
+// ================================================================
+const GLSL = {
+  nvg: `
+    uniform sampler2D colorTexture;
+    in vec2 v_textureCoordinates;
+    void main() {
+      vec4 c = texture(colorTexture, v_textureCoordinates);
+      float lum = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+      // Film grain
+      float t = float(czm_frameNumber) * 0.07;
+      vec2 uv = v_textureCoordinates;
+      float noise = fract(sin(dot(uv * 120.0 + t, vec2(12.9898, 78.233))) * 43758.5453);
+      lum = clamp(lum + noise * 0.04, 0.0, 1.0);
+      // Green phosphor
+      vec3 nvg = vec3(lum * 0.12, lum * 1.05 + 0.06, lum * 0.14);
+      // Circular vignette
+      vec2 p = uv * 2.0 - 1.0;
+      float vig = pow(clamp(1.0 - dot(p * 0.42, p * 0.42), 0.0, 1.0), 1.8);
+      out_FragColor = vec4(nvg * vig, 1.0);
+    }`,
+
+  flir: `
+    uniform sampler2D colorTexture;
+    in vec2 v_textureCoordinates;
+    vec3 thermal(float t) {
+      t = clamp(t, 0.0, 1.0);
+      if (t < 0.20) return mix(vec3(0.00,0.00,0.00), vec3(0.04,0.04,0.28), t/0.20);
+      if (t < 0.40) return mix(vec3(0.04,0.04,0.28), vec3(0.00,0.50,0.55), (t-0.20)/0.20);
+      if (t < 0.60) return mix(vec3(0.00,0.50,0.55), vec3(0.00,0.80,0.10), (t-0.40)/0.20);
+      if (t < 0.80) return mix(vec3(0.00,0.80,0.10), vec3(1.00,0.50,0.00), (t-0.60)/0.20);
+      return mix(vec3(1.00,0.50,0.00), vec3(1.00,1.00,1.00), (t-0.80)/0.20);
+    }
+    void main() {
+      vec4 c = texture(colorTexture, v_textureCoordinates);
+      float heat = dot(c.rgb, vec3(0.299, 0.587, 0.114));
+      heat = pow(heat, 0.65);
+      // Scanline artifact
+      heat += sin(v_textureCoordinates.y * 900.0) * 0.015;
+      out_FragColor = vec4(thermal(heat), 1.0);
+    }`,
+
+  crt: `
+    uniform sampler2D colorTexture;
+    in vec2 v_textureCoordinates;
+    vec2 barrel(vec2 uv) {
+      uv = uv * 2.0 - 1.0;
+      float r2 = dot(uv, uv);
+      uv *= 1.0 + r2 * 0.09;
+      return uv * 0.5 + 0.5;
+    }
+    void main() {
+      vec2 uv = barrel(v_textureCoordinates);
+      if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+        out_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+      }
+      float sh = 0.003;
+      float r = texture(colorTexture, vec2(uv.x + sh, uv.y)).r;
+      float g = texture(colorTexture, uv).g;
+      float b = texture(colorTexture, vec2(uv.x - sh, uv.y)).b;
+      vec3 col = vec3(r, g, b);
+      // Scanlines
+      float sl = mod(floor(uv.y * 700.0), 2.0);
+      col *= 0.82 + sl * 0.18;
+      col.g *= 1.08; col.r *= 0.94;
+      // Vignette
+      vec2 p = v_textureCoordinates * 2.0 - 1.0;
+      col *= clamp(1.0 - dot(p * 0.38, p * 0.38), 0.0, 1.0);
+      out_FragColor = vec4(col, 1.0);
+    }`,
+
+  anime: `
+    uniform sampler2D colorTexture;
+    in vec2 v_textureCoordinates;
+    void main() {
+      vec2 uv = v_textureCoordinates;
+      vec2 px = vec2(1.0/1920.0, 1.0/1080.0);
+      // Sobel edge detection
+      vec3 tl = texture(colorTexture, uv + vec2(-1,-1)*px).rgb;
+      vec3 tc = texture(colorTexture, uv + vec2( 0,-1)*px).rgb;
+      vec3 tr = texture(colorTexture, uv + vec2( 1,-1)*px).rgb;
+      vec3 ml = texture(colorTexture, uv + vec2(-1, 0)*px).rgb;
+      vec3 mr = texture(colorTexture, uv + vec2( 1, 0)*px).rgb;
+      vec3 bl = texture(colorTexture, uv + vec2(-1, 1)*px).rgb;
+      vec3 bc = texture(colorTexture, uv + vec2( 0, 1)*px).rgb;
+      vec3 br = texture(colorTexture, uv + vec2( 1, 1)*px).rgb;
+      vec3 sobelX = -tl + tr - 2.0*ml + 2.0*mr - bl + br;
+      vec3 sobelY = -tl - 2.0*tc - tr + bl + 2.0*bc + br;
+      float edge = smoothstep(0.25, 0.75, length(sobelX) + length(sobelY));
+      // Posterize
+      vec3 col = floor(texture(colorTexture, uv).rgb * 5.0) / 5.0;
+      // Saturate
+      float lum = dot(col, vec3(0.299, 0.587, 0.114));
+      col = mix(vec3(lum), col, 1.7);
+      // Outline
+      col = mix(col, vec3(0.04, 0.04, 0.10), edge);
+      out_FragColor = vec4(col, 1.0);
+    }`
+};
+
+// ================================================================
+// STATE
+// ================================================================
+let viewer, shaderStages = {};
+let currentMode  = 'normal';
+let godModeOn    = false;
+let aircraftMap  = {};
+let satelliteMap = {};
+let satelliteTLEs = [];
+
+// ================================================================
+// LOADING UI
+// ================================================================
+function setLoad(pct, text) {
+  document.getElementById('loadBar').style.width = pct + '%';
+  document.getElementById('loadStatus').textContent = text;
+}
+
+// ================================================================
+// CESIUM INIT
+// ================================================================
+function initCesium() {
+  Cesium.Ion.defaultAccessToken = CFG.CESIUM_TOKEN;
+
+  viewer = new Cesium.Viewer('cesiumContainer', {
+    terrain:              Cesium.Terrain.fromWorldTerrain(),
+    timeline:             false,
+    animation:            false,
+    baseLayerPicker:      false,
+    geocoder:             false,
+    homeButton:           false,
+    sceneModePicker:      false,
+    navigationHelpButton: false,
+    fullscreenButton:     false,
+    infoBox:              false,
+    selectionIndicator:   false,
+  });
+
+  // Remove default imagery, add high-res satellite
+  viewer.imageryLayers.removeAll();
+  viewer.imageryLayers.addImageryProvider(
+    new Cesium.IonImageryProvider({ assetId: 3 }) // Bing Aerial
+  );
+
+  viewer.scene.globe.enableLighting = true;
+  viewer.scene.atmosphere.show = true;
+  viewer.scene.fog.enabled = true;
+  viewer.scene.highDynamicRange = false;
+
+  // Start view over Austin, TX
+  viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(-97.7431, 30.2672, 550000),
+    orientation: {
+      heading: Cesium.Math.toRadians(0),
+      pitch:   Cesium.Math.toRadians(-50),
+      roll:    0
+    },
+    duration: 3
+  });
+}
+
+// ================================================================
+// POST-PROCESS SHADERS
+// ================================================================
+function initShaders() {
+  for (const [name, glsl] of Object.entries(GLSL)) {
+    const stage = viewer.scene.postProcessStages.add(
+      new Cesium.PostProcessStage({ fragmentShader: glsl })
+    );
+    stage.enabled = false;
+    shaderStages[name] = stage;
+  }
+}
+
+// ================================================================
+// AIRCRAFT — OpenSky Network
+// ================================================================
+async function fetchAircraft() {
+  try {
+    const r = await fetch(CFG.OPENSKY_URL, { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    const states = (data.states || []).filter(s => s[5] && s[6] && !s[8]);
+    updateAircraftEntities(states);
+    document.getElementById('aircraftCount').textContent = states.length.toString();
+    document.getElementById('lastUpdate').textContent = 'LIVE';
+  } catch (e) {
+    console.warn('[OpenSky]', e.message);
+    document.getElementById('aircraftCount').textContent = 'API UNAVAIL';
+    document.getElementById('lastUpdate').textContent = 'DEMO';
+    loadDemoAircraft();
+  }
+}
+
+function updateAircraftEntities(states) {
+  const live = new Set();
+
+  states.forEach(s => {
+    const [icao24, callsign, country, , , lon, lat, baroAlt, , velocity, track] = s;
+    if (!lon || !lat) return;
+
+    const id  = icao24;
+    const cs  = (callsign || icao24).trim();
+    const alt = baroAlt || 8000;
+    const hdg = track || 0;
+    const spd = velocity || 0;
+    live.add(id);
+
+    const pos = Cesium.Cartesian3.fromDegrees(lon, lat, alt);
+
+    if (aircraftMap[id]) {
+      aircraftMap[id].position = pos;
+    } else {
+      aircraftMap[id] = viewer.entities.add({
+        id:   'ac_' + id,
+        name: cs,
+        position: pos,
+        point: {
+          pixelSize: 5,
+          color: Cesium.Color.CYAN,
+          outlineColor: Cesium.Color.fromCssColorString('#004433'),
+          outlineWidth: 1,
+          scaleByDistance: new Cesium.NearFarScalar(1e4, 2.0, 1e7, 0.6),
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+        label: {
+          text: cs.substring(0, 10),
+          font: '9px Courier New',
+          fillColor: Cesium.Color.CYAN,
+          outlineColor: Cesium.Color.BLACK,
+          outlineWidth: 2,
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          pixelOffset: new Cesium.Cartesian2(10, -6),
+          scaleByDistance: new Cesium.NearFarScalar(1e4, 1.0, 2e6, 0.0),
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+        properties: {
+          entityType: 'aircraft',
+          callsign: cs,
+          altitude: Math.round(alt),
+          speed: Math.round(spd),
+          heading: Math.round(hdg),
+          country: country,
+          icao: icao24,
+        }
+      });
+    }
+  });
+
+  // Remove stale
+  Object.keys(aircraftMap).forEach(id => {
+    if (!live.has(id)) {
+      viewer.entities.remove(aircraftMap[id]);
+      delete aircraftMap[id];
+    }
+  });
+}
+
+function loadDemoAircraft() {
+  const demo = [
+    { id:'D1', cs:'UAL123',  lat: 40.60, lon: -73.80, alt:10668, spd:245, hdg: 90, ctry:'United States' },
+    { id:'D2', cs:'BAW442',  lat: 51.40, lon:  -0.40, alt: 9144, spd:230, hdg:270, ctry:'United Kingdom' },
+    { id:'D3', cs:'DLH001',  lat: 48.80, lon:   2.30, alt:11277, spd:245, hdg: 45, ctry:'Germany'        },
+    { id:'D4', cs:'SWA4567', lat: 33.94, lon:-118.40, alt: 8839, spd:220, hdg:315, ctry:'United States'  },
+    { id:'D5', cs:'JAL31',   lat: 35.55, lon: 139.78, alt:10972, spd:265, hdg:180, ctry:'Japan'          },
+    { id:'D6', cs:'AFR666',  lat: 48.70, lon:   2.20, alt:11000, spd:240, hdg:200, ctry:'France'         },
+    { id:'D7', cs:'QFA11',   lat:-33.86, lon: 151.21, alt: 9500, spd:255, hdg: 10, ctry:'Australia'      },
+    { id:'D8', cs:'MAS37',   lat:  3.14, lon: 101.69, alt:10200, spd:248, hdg: 60, ctry:'Malaysia'       },
+  ];
+  demo.forEach(f => {
+    if (aircraftMap[f.id]) return;
+    aircraftMap[f.id] = viewer.entities.add({
+      id: 'ac_' + f.id,
+      name: f.cs,
+      position: Cesium.Cartesian3.fromDegrees(f.lon, f.lat, f.alt),
+      point: {
+        pixelSize: 5,
+        color: Cesium.Color.CYAN.withAlpha(0.8),
+        outlineColor: Cesium.Color.fromCssColorString('#003322'),
+        outlineWidth: 1,
+        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      },
+      label: {
+        text: f.cs,
+        font: '9px Courier New',
+        fillColor: Cesium.Color.CYAN,
+        outlineColor: Cesium.Color.BLACK,
+        outlineWidth: 2,
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+        pixelOffset: new Cesium.Cartesian2(10, -6),
+        scaleByDistance: new Cesium.NearFarScalar(1e4, 1.0, 2e6, 0.0),
+        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      },
+      properties: {
+        entityType: 'aircraft',
+        callsign: f.cs,
+        altitude: f.alt,
+        speed: f.spd,
+        heading: f.hdg,
+        country: f.ctry,
+        icao: f.id,
+      }
+    });
+  });
+  document.getElementById('aircraftCount').textContent = demo.length + ' (DEMO)';
+}
+
+// ================================================================
+// SATELLITES — CelesTrak TLE + satellite.js propagation
+// ================================================================
+async function fetchSatellites() {
+  // Try JSON first (includes TLE lines)
+  try {
+    const r = await fetch(`${CFG.CELESTRAK_URL}?GROUP=visual&FORMAT=tle`, { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const text = await r.text();
+    const lines = text.trim().split('\n').map(l => l.trim()).filter(Boolean);
+    satelliteTLEs = [];
+    for (let i = 0; i + 2 < lines.length; i += 3) {
+      const name = lines[i];
+      const l1   = lines[i + 1];
+      const l2   = lines[i + 2];
+      if (l1[0] !== '1' || l2[0] !== '2') continue;
+      try {
+        const satrec = satellite.twoline2satrec(l1, l2);
+        satelliteTLEs.push({ name, satrec });
+      } catch (_) {}
+    }
+    document.getElementById('satelliteCount').textContent = satelliteTLEs.length.toString();
+    notify('LOADED ' + satelliteTLEs.length + ' SATELLITE TLEs');
+  } catch (e) {
+    console.warn('[CelesTrak]', e.message);
+    loadDemoSatellites();
+  }
+}
+
+function loadDemoSatellites() {
+  // ISS + a few common satellites (pre-baked approximate TLE lines)
+  const demoTLEs = [
+    ['ISS (ZARYA)',
+     '1 25544U 98067A   24001.50000000  .00002182  00000-0  40215-4 0  9990',
+     '2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.50138523427149'],
+    ['HUBBLE',
+     '1 20580U 90037B   24001.50000000  .00001354  00000-0  64697-4 0  9997',
+     '2 20580  28.4700 224.4425 0002826 271.0956 234.0780 15.09679060371735'],
+    ['NOAA 19',
+     '1 33591U 09005A   24001.50000000  .00000064  00000-0  62717-4 0  9993',
+     '2 33591  99.1680 123.3400 0013968 199.7400 160.3200 14.12270000734801'],
+    ['TERRA',
+     '1 25994U 99068A   24001.50000000  .00000019  00000-0  24975-4 0  9997',
+     '2 25994  98.2026  62.9437 0001401  91.3399 268.7900 14.57110824277502'],
+    ['AQUA',
+     '1 27424U 02022A   24001.50000000  .00000136  00000-0  65516-4 0  9991',
+     '2 27424  98.2082  65.0180 0001523  89.4600 270.6700 14.57117500115280'],
+    ['STARLINK-30000',
+     '1 55000U 23001A   24001.50000000  .00001000  00000-0  10000-3 0  9995',
+     '2 55000  53.0000 100.0000 0001500  90.0000 270.0000 15.06000000000000'],
+  ];
+  demoTLEs.forEach(([name, l1, l2]) => {
+    try {
+      const satrec = satellite.twoline2satrec(l1, l2);
+      satelliteTLEs.push({ name, satrec });
+    } catch (_) {}
+  });
+  document.getElementById('satelliteCount').textContent = satelliteTLEs.length + ' (DEMO)';
+}
+
+function propagateSatellites() {
+  if (!satelliteTLEs.length) return;
+  const now  = new Date();
+  const gmst = satellite.gstime(now);
+
+  satelliteTLEs.forEach((sat, i) => {
+    try {
+      const pv = satellite.propagate(sat.satrec, now);
+      if (!pv || !pv.position) return;
+
+      const geo = satellite.eciToGeodetic(pv.position, gmst);
+      const lon = satellite.degreesLong(geo.longitude);
+      const lat = satellite.degreesLat(geo.latitude);
+      const alt = geo.height * 1000; // km → m
+
+      if (isNaN(lon) || isNaN(lat) || isNaN(alt) || alt < 0) return;
+
+      const isMil = /USA |KH-|LACROSSE|NROL|KEYHOLE|ONYX/.test(sat.name.toUpperCase());
+      const color = isMil ? Cesium.Color.RED : Cesium.Color.YELLOW;
+      const id = 'sat_' + i;
+
+      if (satelliteMap[id]) {
+        satelliteMap[id].position = Cesium.Cartesian3.fromDegrees(lon, lat, alt);
+      } else {
+        satelliteMap[id] = viewer.entities.add({
+          id,
+          name: sat.name,
+          position: Cesium.Cartesian3.fromDegrees(lon, lat, alt),
+          point: {
+            pixelSize: 3,
+            color,
+            outlineColor: Cesium.Color.WHITE.withAlpha(0.3),
+            outlineWidth: 0.5,
+            scaleByDistance: new Cesium.NearFarScalar(1e5, 2.5, 1e8, 0.4),
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          },
+          label: {
+            text: sat.name.substring(0, 14),
+            font: '8px Courier New',
+            fillColor: color,
+            outlineColor: Cesium.Color.BLACK,
+            outlineWidth: 1,
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            pixelOffset: new Cesium.Cartesian2(8, -5),
+            scaleByDistance: new Cesium.NearFarScalar(5e4, 1.0, 5e6, 0.0),
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          },
+          properties: {
+            entityType: 'satellite',
+            satName: sat.name,
+            altitude: Math.round(alt / 1000),
+            isMilitary: isMil,
+          }
+        });
+      }
+    } catch (_) {}
+  });
+}
+
+// ================================================================
+// CCTV CAMERA MARKERS — Austin public traffic cameras
+// ================================================================
+function addCCTVMarkers() {
+  const cams = [
+    { name:'CAM-001: I-35 & MLK',     lat:30.2849, lon:-97.7341 },
+    { name:'CAM-002: Barton Springs',  lat:30.2626, lon:-97.7708 },
+    { name:'CAM-003: Airport Blvd',    lat:30.2977, lon:-97.7098 },
+    { name:'CAM-004: Loop 1 & 183',    lat:30.3844, lon:-97.7471 },
+    { name:'CAM-005: Congress & 6th',  lat:30.2682, lon:-97.7404 },
+    { name:'CAM-006: 6th & Lamar',     lat:30.2707, lon:-97.7538 },
+    { name:'CAM-007: 183 & Burnet',    lat:30.3506, lon:-97.7446 },
+    { name:'CAM-008: S. 1st & Ben White',lat:30.2310,lon:-97.7671},
+  ];
+
+  cams.forEach(cam => {
+    viewer.entities.add({
+      id:   'cctv_' + cam.name,
+      name: cam.name,
+      position: Cesium.Cartesian3.fromDegrees(cam.lon, cam.lat, 20),
+      point: {
+        pixelSize: 7,
+        color: Cesium.Color.fromCssColorString('#cc00ff'),
+        outlineColor: Cesium.Color.WHITE,
+        outlineWidth: 1,
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+        scaleByDistance: new Cesium.NearFarScalar(500, 2.0, 5e5, 0.4),
+        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      },
+      label: {
+        text: cam.name.split(':')[0],
+        font: '8px Courier New',
+        fillColor: Cesium.Color.fromCssColorString('#cc00ff'),
+        outlineColor: Cesium.Color.BLACK,
+        outlineWidth: 1,
+        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+        pixelOffset: new Cesium.Cartesian2(10, -5),
+        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+        scaleByDistance: new Cesium.NearFarScalar(500, 1.0, 1e5, 0.0),
+        disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      },
+      properties: { entityType: 'cctv', camName: cam.name }
+    });
+  });
+
+  document.getElementById('cctvCount').textContent = cams.length + ' (AUSTIN)';
+}
+
+// ================================================================
+// VEHICLE PARTICLE SYSTEM — simulated road flows
+// ================================================================
+function initVehicleParticles() {
+  // Austin road corridors with waypoints [lon, lat]
+  const corridors = [
+    { name:'I-35',  pts:[[-97.733,30.185],[-97.740,30.250],[-97.741,30.330],[-97.742,30.410]] },
+    { name:'Loop1', pts:[[-97.783,30.198],[-97.781,30.265],[-97.774,30.337],[-97.762,30.393]] },
+    { name:'183',   pts:[[-97.838,30.338],[-97.781,30.346],[-97.719,30.352],[-97.662,30.358]] },
+    { name:'Hwy71', pts:[[-97.818,30.220],[-97.771,30.226],[-97.720,30.228],[-97.670,30.229]] },
+  ];
+
+  corridors.forEach(road => {
+    const n = 10;
+    for (let i = 0; i < n; i++) {
+      const t  = i / n;
+      const pi = Math.min(Math.floor(t * (road.pts.length - 1)), road.pts.length - 2);
+      const t2 = (t * (road.pts.length - 1)) - pi;
+      const p0 = road.pts[pi];
+      const p1 = road.pts[pi + 1];
+      const lon = p0[0] + (p1[0] - p0[0]) * t2;
+      const lat = p0[1] + (p1[1] - p0[1]) * t2;
+
+      viewer.entities.add({
+        position: Cesium.Cartesian3.fromDegrees(lon, lat, 5),
+        point: {
+          pixelSize: 2,
+          color: Cesium.Color.fromCssColorString('#ff8800').withAlpha(0.75),
+          heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+          scaleByDistance: new Cesium.NearFarScalar(500, 2.5, 5e4, 0.0),
+          disableDepthTestDistance: 5000,
+        },
+        properties: { entityType: 'vehicle', road: road.name }
+      });
+    }
+  });
+}
+
+// ================================================================
+// VISUAL MODES
+// ================================================================
+function setMode(mode) {
+  currentMode = mode;
+
+  // Disable all shader stages
+  Object.values(shaderStages).forEach(s => s.enabled = false);
+
+  // Hide CSS overlays
+  document.getElementById('overlay-scanlines').style.display    = 'none';
+  document.getElementById('overlay-vignette-nvg').style.display = 'none';
+  document.getElementById('overlay-anime').style.display        = 'none';
+
+  // Update button states
+  document.querySelectorAll('.mode-btn:not(#btn-god)').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + mode)?.classList.add('active');
+
+  switch (mode) {
+    case 'nvg':
+      shaderStages.nvg.enabled = true;
+      document.getElementById('overlay-vignette-nvg').style.display = 'block';
+      document.getElementById('modeDisplay').textContent = 'MODE: NIGHT VISION';
+      break;
+    case 'flir':
+      shaderStages.flir.enabled = true;
+      document.getElementById('modeDisplay').textContent = 'MODE: FLIR THERMAL';
+      break;
+    case 'crt':
+      shaderStages.crt.enabled = true;
+      document.getElementById('overlay-scanlines').style.display = 'block';
+      document.getElementById('modeDisplay').textContent = 'MODE: CRT DISPLAY';
+      break;
+    case 'anime':
+      shaderStages.anime.enabled = true;
+      document.getElementById('overlay-anime').style.display = 'block';
+      document.getElementById('modeDisplay').textContent = 'MODE: ANIME';
+      break;
+    default:
+      document.getElementById('modeDisplay').textContent = 'MODE: STANDARD';
+  }
+}
+
+// ================================================================
+// GOD MODE
+// ================================================================
+function toggleGodMode() {
+  godModeOn = !godModeOn;
+  const btn     = document.getElementById('btn-god');
+  const reticle = document.getElementById('reticle');
+
+  if (godModeOn) {
+    btn.classList.add('god-on');
+    btn.textContent = '⚡ GOD ON';
+    reticle.style.display = 'block';
+
+    Object.values(aircraftMap).forEach(e => {
+      e.point.color   = Cesium.Color.RED;
+      e.point.pixelSize = 9;
+    });
+    Object.values(satelliteMap).forEach(e => {
+      e.point.color   = Cesium.Color.ORANGE;
+      e.point.pixelSize = 6;
+    });
+
+    const ac  = Object.keys(aircraftMap).length;
+    const sat = Object.keys(satelliteMap).length;
+    notify(`PANOPTIC VIEW — TRACKING ${ac} AIRCRAFT + ${sat} SATELLITES`, true);
+  } else {
+    btn.classList.remove('god-on');
+    btn.textContent = 'GOD MODE';
+    reticle.style.display = 'none';
+
+    Object.values(aircraftMap).forEach(e => {
+      e.point.color   = Cesium.Color.CYAN;
+      e.point.pixelSize = 5;
+    });
+    Object.values(satelliteMap).forEach(e => {
+      const mil = e.properties.isMilitary?.getValue();
+      e.point.color   = mil ? Cesium.Color.RED : Cesium.Color.YELLOW;
+      e.point.pixelSize = 3;
+    });
+    document.getElementById('modeDisplay').textContent =
+      currentMode === 'normal' ? 'MODE: STANDARD' : 'MODE: ' + currentMode.toUpperCase();
+  }
+}
+
+// ================================================================
+// ENTITY CLICK — target intel panel
+// ================================================================
+function initClickHandler() {
+  const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+  handler.setInputAction(ev => {
+    const picked = viewer.scene.pick(ev.position);
+    if (!Cesium.defined(picked) || !Cesium.defined(picked.id)) return;
+
+    const entity = picked.id;
+    const props  = entity.properties;
+    if (!props) return;
+    const type = props.entityType?.getValue();
+
+    let html = '';
+    if (type === 'aircraft') {
+      const cs  = props.callsign?.getValue() || '---';
+      const alt = props.altitude?.getValue() || 0;
+      const spd = props.speed?.getValue()    || 0;
+      const hdg = props.heading?.getValue()  || 0;
+      const ctry= props.country?.getValue()  || 'UNKNOWN';
+      const icao= props.icao?.getValue()     || '---';
+      html = `
+        <div style="color:#00ffcc;margin-bottom:5px;letter-spacing:2px">${cs}</div>
+        TYPE: AIRCRAFT<br>
+        ICAO: ${icao}<br>
+        ALT:  ${alt} m<br>
+        SPD:  ${spd} m/s<br>
+        HDG:  ${hdg}°<br>
+        ORIGIN: ${ctry}`;
+    } else if (type === 'satellite') {
+      const name = props.satName?.getValue()  || entity.name;
+      const alt  = props.altitude?.getValue() || 0;
+      const mil  = props.isMilitary?.getValue();
+      html = `
+        <div style="color:#ffff00;margin-bottom:5px;letter-spacing:2px">${name}</div>
+        TYPE: SATELLITE<br>
+        ALT:  ${alt} km<br>
+        CLASS: ${mil ? '<span style="color:#ff3333">MILITARY</span>' : 'CIVILIAN'}`;
+    } else if (type === 'cctv') {
+      const name = props.camName?.getValue() || entity.name;
+      html = `
+        <div style="color:#cc00ff;margin-bottom:5px;letter-spacing:2px">${name}</div>
+        TYPE: CCTV NODE<br>
+        STATUS: <span style="color:#00ff41">LIVE</span><br>
+        FEED: PUBLIC TRAFFIC<br>
+        RESOLUTION: 1080p`;
+    } else if (type === 'vehicle') {
+      html = `
+        <div style="color:#ff8800;margin-bottom:5px;">VEHICLE</div>
+        ROAD: ${props.road?.getValue() || 'UNKNOWN'}<br>
+        STATUS: IN TRANSIT`;
+    }
+
+    if (html) {
+      document.getElementById('targetInfo').innerHTML = html;
+    }
+  }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+}
+
+// ================================================================
+// COORDINATE / CLOCK HUD
+// ================================================================
+function startHUDUpdates() {
+  // Camera coords
+  viewer.scene.postRender.addEventListener(() => {
+    const carto = viewer.scene.camera.positionCartographic;
+    if (!carto) return;
+    const lon = Cesium.Math.toDegrees(carto.longitude).toFixed(4);
+    const lat = Cesium.Math.toDegrees(carto.latitude).toFixed(4);
+    const alt = carto.height;
+    const altStr = alt >= 1000 ? (alt / 1000).toFixed(1) + ' km' : Math.round(alt) + ' m';
+    document.getElementById('coordDisplay').textContent = `LAT: ${lat}  LON: ${lon}`;
+    document.getElementById('altDisplay').textContent   = `ALT: ${altStr}`;
+  });
+
+  // Clock
+  setInterval(() => {
+    const now = new Date();
+    const utc = now.toUTCString().split(' ')[4];
+    const loc = now.toLocaleTimeString();
+    const date = now.toISOString().split('T')[0];
+    document.getElementById('clock').innerHTML =
+      `UTC: ${utc}<br>${date}<br>LOCAL: ${loc}`;
+  }, 1000);
+}
+
+// ================================================================
+// KEYBOARD SHORTCUTS
+// ================================================================
+document.addEventListener('keydown', e => {
+  switch (e.key) {
+    case '1': setMode('normal'); break;
+    case '2': setMode('nvg');   break;
+    case '3': setMode('flir');  break;
+    case '4': setMode('crt');   break;
+    case '5': setMode('anime'); break;
+    case 'g':
+    case 'G': toggleGodMode();  break;
+  }
+});
+
+// ================================================================
+// NOTIFICATIONS
+// ================================================================
+function notify(text, isRed = false) {
+  const el = document.createElement('div');
+  el.className = 'notif' + (isRed ? ' red' : '');
+  el.textContent = text;
+  document.getElementById('hud').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ================================================================
+// GOOGLE 3D TILES (optional — needs API key)
+// ================================================================
+async function tryLoad3DTiles() {
+  if (!CFG.GOOGLE_MAPS_KEY) return;
+  try {
+    const tileset = await Cesium.Cesium3DTileset.fromUrl(
+      `https://tile.googleapis.com/v1/3dtiles/root.json?key=${CFG.GOOGLE_MAPS_KEY}`
+    );
+    viewer.scene.primitives.add(tileset);
+    notify('GOOGLE 3D PHOTOREALISTIC TILES — ONLINE');
+  } catch (e) {
+    console.warn('[Google 3D Tiles]', e.message);
+  }
+}
+
+// ================================================================
+// MAIN — boot sequence
+// ================================================================
+(async () => {
+  setLoad(5,  'BOOTING CESIUMJS...');
+  initCesium();
+
+  setLoad(20, 'COMPILING SHADERS...');
+  // Small delay so Cesium scene is ready
+  await new Promise(r => setTimeout(r, 800));
+  initShaders();
+
+  setLoad(35, 'FETCHING SATELLITE TLEs...');
+  await fetchSatellites();
+
+  setLoad(55, 'FETCHING LIVE FLIGHT DATA...');
+  await fetchAircraft();
+
+  setLoad(70, 'LOADING GOOGLE 3D TILES...');
+  await tryLoad3DTiles();
+
+  setLoad(82, 'PLACING CCTV NODES...');
+  addCCTVMarkers();
+
+  setLoad(90, 'INITIALIZING VEHICLE PARTICLES...');
+  initVehicleParticles();
+
+  setLoad(96, 'WIRING HUD...');
+  initClickHandler();
+  startHUDUpdates();
+
+  // Start real-time loops
+  setInterval(propagateSatellites, CFG.SATELLITE_UPDATE_MS);
+  setInterval(fetchAircraft,       CFG.FLIGHT_UPDATE_MS);
+  propagateSatellites(); // first tick
+
+  setLoad(100, 'ALL SYSTEMS NOMINAL');
+  await new Promise(r => setTimeout(r, 600));
+
+  // Hide loading screen
+  document.getElementById('loading').style.transition = 'opacity 0.8s';
+  document.getElementById('loading').style.opacity = '0';
+  setTimeout(() => document.getElementById('loading').style.display = 'none', 900);
+
+  notify('WORLDVIEW ONLINE — SPATIAL INTELLIGENCE PLATFORM ACTIVE');
+})();
+</script>
+</body>
+</html>
