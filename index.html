@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WORLDVIEW — Spatial Intelligence Platform</title>
+<title>WorldView — Spatial Intelligence</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
 <!-- CesiumJS -->
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
@@ -15,350 +18,425 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+:root {
+  --glass: rgba(10, 12, 20, 0.78);
+  --border: rgba(255,255,255,0.08);
+  --accent: #2dd4bf;
+  --text: #e2e8f0;
+  --muted: rgba(226,232,240,0.45);
+  --aircraft: #38bdf8;
+  --satellite: #fbbf24;
+  --cctv: #c084fc;
+  --danger: #f87171;
+  --radius: 10px;
+}
+
 body {
   background: #000;
-  font-family: 'Courier New', monospace;
+  font-family: 'Inter', system-ui, sans-serif;
   overflow: hidden;
+  color: var(--text);
 }
 
-#cesiumContainer {
-  width: 100vw;
-  height: 100vh;
-}
+#cesiumContainer { width: 100vw; height: 100vh; }
+.cesium-widget-credits, .cesium-viewer-bottom { display: none !important; }
 
-/* Hide default Cesium UI chrome */
-.cesium-widget-credits,
-.cesium-viewer-bottom { display: none !important; }
-
-/* ===== HUD ===== */
-#hud {
+/* ── TOP BAR ── */
+#topbar {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 16px; left: 16px; right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   pointer-events: none;
   z-index: 100;
 }
 
-/* Corner brackets */
-.corner { position: absolute; width: 24px; height: 24px; }
-.corner-tl { top: 10px; left: 10px; border-top: 2px solid #00ff41; border-left: 2px solid #00ff41; }
-.corner-tr { top: 10px; right: 10px; border-top: 2px solid #00ff41; border-right: 2px solid #00ff41; }
-.corner-bl { bottom: 10px; left: 10px; border-bottom: 2px solid #00ff41; border-left: 2px solid #00ff41; }
-.corner-br { bottom: 10px; right: 10px; border-bottom: 2px solid #00ff41; border-right: 2px solid #00ff41; }
-
-/* Top bar */
-#topbar {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 22px;
-  background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, transparent 100%);
-}
-
 .logo {
-  color: #00ff41;
-  font-size: 16px;
-  font-weight: bold;
-  letter-spacing: 6px;
-  text-shadow: 0 0 12px #00ff41;
-}
-
-.hud-text {
-  color: #00ff41;
-  font-size: 10px;
-  letter-spacing: 2px;
-  text-shadow: 0 0 6px rgba(0,255,65,0.5);
-}
-
-/* Side panel */
-#dataPanel {
-  position: absolute;
-  top: 58px;
-  right: 18px;
-  width: 210px;
-  background: rgba(0,0,0,0.82);
-  border: 1px solid rgba(0,255,65,0.35);
-  padding: 12px;
-}
-
-.panel-title {
-  color: #00ff41;
-  font-size: 9px;
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
   letter-spacing: 3px;
-  margin-bottom: 10px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(0,255,65,0.25);
+  color: var(--accent);
+  text-transform: uppercase;
 }
 
-.data-row {
+.coord-pill {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  color: var(--muted);
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 6px;
+  gap: 14px;
 }
 
-.data-label { color: rgba(0,255,65,0.55); font-size: 9px; letter-spacing: 1px; }
-.data-value { color: #00ff41; font-size: 9px; letter-spacing: 1px; }
+.coord-pill span { color: var(--text); }
+
+#modeDisplay {
+  margin-left: auto;
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+
+/* ── SIDEBAR ── */
+#sidebar {
+  position: absolute;
+  top: 70px; right: 16px;
+  width: 240px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+#sidebar.hidden {
+  transform: translateX(260px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.card {
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+.card-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.stat-row:last-child { margin-bottom: 0; }
+
+.stat-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-live { background: #22c55e; box-shadow: 0 0 5px #22c55e; animation: blink 2s ease-in-out infinite; }
+.dot-ac   { background: var(--aircraft); }
+.dot-sat  { background: var(--satellite); }
+.dot-cctv { background: var(--cctv); }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+}
+
+.stat-value {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* Intel card */
+#targetCard {
+  transition: opacity 0.2s;
+}
 
 #targetInfo {
-  color: rgba(0,255,65,0.5);
-  font-size: 9px;
-  letter-spacing: 1px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+#targetInfo .t-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* Clock */
+#clock {
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  color: var(--muted);
   line-height: 1.7;
 }
 
-/* Left info */
-#leftPanel {
+/* ── SIDEBAR TOGGLE ── */
+#sidebarToggle {
   position: absolute;
-  top: 58px;
-  left: 18px;
+  top: 70px; right: 16px;
+  z-index: 101;
+  width: 36px; height: 36px;
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  pointer-events: all;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 16px;
+  transition: color 0.2s;
 }
 
-#clock {
-  color: #00ff41;
-  font-size: 10px;
-  letter-spacing: 2px;
-  line-height: 1.8;
-  text-shadow: 0 0 6px rgba(0,255,65,0.4);
-}
+#sidebarToggle:hover { color: var(--text); }
+#sidebar:not(.hidden) ~ #sidebarToggle,
+#sidebarToggle.open { right: 268px; }
 
-/* Mode controls */
+/* ── MODE SWITCHER ── */
 #controls {
   position: absolute;
-  bottom: 28px;
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 6px;
+  gap: 4px;
+  z-index: 100;
   pointer-events: all;
-  background: rgba(0,0,0,0.6);
-  padding: 10px 14px;
-  border: 1px solid rgba(0,255,65,0.2);
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 6px;
 }
 
 .mode-btn {
   background: transparent;
-  border: 1px solid rgba(0,255,65,0.3);
-  color: rgba(0,255,65,0.7);
-  padding: 7px 14px;
-  font-family: 'Courier New', monospace;
-  font-size: 10px;
-  letter-spacing: 2px;
+  border: none;
+  border-radius: 10px;
+  color: var(--muted);
+  padding: 8px 16px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
-  text-transform: uppercase;
-}
-
-.mode-btn:hover {
-  background: rgba(0,255,65,0.08);
-  border-color: #00ff41;
-  color: #00ff41;
-  box-shadow: 0 0 10px rgba(0,255,65,0.2);
-}
-
-.mode-btn.active {
-  background: rgba(0,255,65,0.12);
-  border-color: #00ff41;
-  color: #00ff41;
-  box-shadow: 0 0 8px rgba(0,255,65,0.3);
-}
-
-.mode-btn.god-on {
-  border-color: #ff3333;
-  color: #ff3333;
-  box-shadow: 0 0 12px rgba(255,51,51,0.4);
-  animation: godPulse 1.5s ease-in-out infinite;
-}
-
-@keyframes godPulse {
-  0%, 100% { box-shadow: 0 0 12px rgba(255,51,51,0.4); }
-  50% { box-shadow: 0 0 22px rgba(255,51,51,0.7); }
-}
-
-/* Crosshair / reticle */
-#reticle {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  display: none;
-  pointer-events: none;
-}
-
-/* Post-process CSS overlays */
-#overlay-scanlines {
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  pointer-events: none;
-  display: none;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0,0,0,0.18) 2px,
-    rgba(0,0,0,0.18) 4px
-  );
-}
-
-#overlay-vignette-nvg {
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  pointer-events: none;
-  display: none;
-  background: radial-gradient(ellipse at center, transparent 52%, rgba(0,18,0,0.88) 100%);
-}
-
-#overlay-anime {
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  pointer-events: none;
-  display: none;
-  border: 10px solid rgba(255,150,200,0.25);
-  box-shadow: inset 0 0 60px rgba(255,100,180,0.08);
-}
-
-/* Notification */
-.notif {
-  position: absolute;
-  top: 56px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0,0,0,0.9);
-  border: 1px solid #00ff41;
-  color: #00ff41;
-  padding: 8px 22px;
-  font-size: 10px;
-  letter-spacing: 2px;
-  animation: notifAnim 3.2s forwards;
+  transition: all 0.18s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   white-space: nowrap;
 }
 
-.notif.red {
-  border-color: #ff3333;
-  color: #ff3333;
+.mode-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+
+.mode-btn.active {
+  background: rgba(45, 212, 191, 0.15);
+  color: var(--accent);
 }
 
+.mode-btn.god-on {
+  background: rgba(248,113,113,0.15);
+  color: var(--danger);
+  animation: godPulse 2s ease-in-out infinite;
+}
+
+@keyframes godPulse {
+  0%, 100% { background: rgba(248,113,113,0.12); }
+  50%       { background: rgba(248,113,113,0.25); }
+}
+
+/* ── OVERLAYS ── */
+#overlay-scanlines {
+  position: absolute; inset: 0; pointer-events: none; display: none;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px);
+}
+#overlay-vignette-nvg {
+  position: absolute; inset: 0; pointer-events: none; display: none;
+  background: radial-gradient(ellipse at center, transparent 52%, rgba(0,15,0,0.9) 100%);
+}
+#overlay-anime {
+  position: absolute; inset: 0; pointer-events: none; display: none;
+  border: 8px solid rgba(255,150,200,0.2);
+  box-shadow: inset 0 0 60px rgba(255,100,180,0.07);
+}
+
+/* ── RETICLE ── */
+#reticle {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  display: none; pointer-events: none;
+}
+
+/* ── NOTIFICATION ── */
+.notif {
+  position: absolute;
+  top: 70px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 10px 20px;
+  font-size: 12px;
+  font-weight: 500;
+  animation: notifAnim 3s forwards;
+  white-space: nowrap;
+  z-index: 200;
+}
+.notif.red { border-color: rgba(248,113,113,0.4); color: var(--danger); }
+
 @keyframes notifAnim {
-  0%   { opacity: 0; transform: translateX(-50%) translateY(-8px); }
-  12%  { opacity: 1; transform: translateX(-50%) translateY(0); }
-  75%  { opacity: 1; }
+  0%   { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+  15%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  70%  { opacity: 1; }
   100% { opacity: 0; }
 }
 
-/* Loading screen */
+/* ── LOADING ── */
 #loading {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: #000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  position: absolute; inset: 0;
+  background: #050810;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
   z-index: 999;
+  gap: 20px;
 }
 
 .load-logo {
-  color: #00ff41;
-  font-size: 28px;
-  letter-spacing: 10px;
-  text-shadow: 0 0 20px #00ff41;
-  margin-bottom: 30px;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: 8px;
+  color: var(--accent);
+  text-shadow: 0 0 30px rgba(45,212,191,0.5);
+}
+
+.load-sub {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
 .load-bar-wrap {
-  width: 300px;
-  height: 2px;
-  background: rgba(0,255,65,0.15);
-  margin-bottom: 16px;
-  overflow: hidden;
+  width: 220px; height: 2px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px; overflow: hidden;
 }
 
 .load-bar {
   height: 100%;
-  background: #00ff41;
-  box-shadow: 0 0 10px #00ff41;
-  width: 0%;
-  transition: width 0.4s ease;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  width: 0%; transition: width 0.4s ease;
 }
 
 .load-status {
-  color: rgba(0,255,65,0.7);
-  font-size: 10px;
-  letter-spacing: 3px;
-  height: 20px;
-}
-
-/* Keys hint */
-#keyhints {
-  position: absolute;
-  bottom: 80px;
-  left: 18px;
-  color: rgba(0,255,65,0.3);
-  font-size: 9px;
+  font-size: 11px;
+  color: var(--muted);
   letter-spacing: 1px;
-  line-height: 1.8;
+  min-height: 18px;
 }
 </style>
 </head>
 <body>
 
-<!-- Loading screen -->
+<!-- Loading -->
 <div id="loading">
   <div class="load-logo">WORLDVIEW</div>
+  <div class="load-sub">Spatial Intelligence Platform</div>
   <div class="load-bar-wrap"><div class="load-bar" id="loadBar"></div></div>
-  <div class="load-status" id="loadStatus">INITIALIZING...</div>
+  <div class="load-status" id="loadStatus">Initializing...</div>
 </div>
 
 <div id="cesiumContainer"></div>
 
 <!-- HUD -->
-<div id="hud">
-  <div class="corner corner-tl"></div>
-  <div class="corner corner-tr"></div>
-  <div class="corner corner-bl"></div>
-  <div class="corner corner-br"></div>
+<div id="hud" style="position:absolute;inset:0;pointer-events:none;z-index:100;">
 
   <!-- Top bar -->
   <div id="topbar">
-    <div class="logo">WORLDVIEW</div>
-    <div class="hud-text" id="coordDisplay">LAT: -.---- LON: -.----</div>
-    <div class="hud-text" id="altDisplay">ALT: ---</div>
-    <div class="hud-text" id="modeDisplay">MODE: STANDARD</div>
+    <div class="logo">WorldView</div>
+    <div class="coord-pill">
+      <span id="coordDisplay">—</span>
+      <span id="altDisplay">—</span>
+    </div>
+    <div id="modeDisplay">Standard</div>
   </div>
 
-  <!-- Left panel -->
-  <div id="leftPanel">
-    <div id="clock"></div>
+  <!-- Sidebar -->
+  <div id="sidebar">
+
+    <!-- Live stats -->
+    <div class="card">
+      <div class="card-title">Live Data</div>
+      <div class="stat-row">
+        <span class="stat-label"><span class="dot dot-live"></span> Feed</span>
+        <span class="stat-value" id="lastUpdate" style="font-size:11px;color:var(--muted)">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label"><span class="dot dot-ac"></span> Aircraft</span>
+        <span class="stat-value" id="aircraftCount">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label"><span class="dot dot-sat"></span> Satellites</span>
+        <span class="stat-value" id="satelliteCount">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label"><span class="dot dot-cctv"></span> CCTV Nodes</span>
+        <span class="stat-value" id="cctvCount">—</span>
+      </div>
+    </div>
+
+    <!-- Selected target -->
+    <div class="card" id="targetCard">
+      <div class="card-title">Selected Target</div>
+      <div id="targetInfo" style="color:var(--muted);font-size:12px;">Click any object on the globe</div>
+    </div>
+
+    <!-- Clock -->
+    <div class="card">
+      <div id="clock"></div>
+    </div>
+
   </div>
 
-  <!-- Right data panel -->
-  <div id="dataPanel">
-    <div class="panel-title">LIVE INTELLIGENCE</div>
-    <div class="data-row">
-      <span class="data-label">AIRCRAFT</span>
-      <span class="data-value" id="aircraftCount">---</span>
-    </div>
-    <div class="data-row">
-      <span class="data-label">SATELLITES</span>
-      <span class="data-value" id="satelliteCount">---</span>
-    </div>
-    <div class="data-row">
-      <span class="data-label">CCTV NODES</span>
-      <span class="data-value" id="cctvCount">---</span>
-    </div>
-    <div class="data-row">
-      <span class="data-label">DATA FEED</span>
-      <span class="data-value" id="lastUpdate">OFFLINE</span>
-    </div>
-    <div style="border-top:1px solid rgba(0,255,65,0.2);margin:10px 0 8px;"></div>
-    <div class="panel-title" style="margin-top:0">SELECTED TARGET</div>
-    <div id="targetInfo">NO TARGET SELECTED</div>
-  </div>
+  <!-- Sidebar toggle button -->
+  <button id="sidebarToggle" class="open" onclick="toggleSidebar()" style="pointer-events:all;">⊞</button>
 
-  <!-- Mode controls -->
+  <!-- Mode switcher -->
   <div id="controls">
-    <button class="mode-btn active" id="btn-normal"  onclick="setMode('normal')">STANDARD</button>
-    <button class="mode-btn"        id="btn-nvg"     onclick="setMode('nvg')">NVG</button>
-    <button class="mode-btn"        id="btn-flir"    onclick="setMode('flir')">FLIR</button>
-    <button class="mode-btn"        id="btn-crt"     onclick="setMode('crt')">CRT</button>
-    <button class="mode-btn"        id="btn-anime"   onclick="setMode('anime')">ANIME</button>
-    <button class="mode-btn"        id="btn-god"     onclick="toggleGodMode()">GOD MODE</button>
+    <button class="mode-btn active" id="btn-normal" onclick="setMode('normal')">🌍 Standard</button>
+    <button class="mode-btn"        id="btn-nvg"    onclick="setMode('nvg')">🟢 Night Vision</button>
+    <button class="mode-btn"        id="btn-flir"   onclick="setMode('flir')">🔥 Thermal</button>
+    <button class="mode-btn"        id="btn-crt"    onclick="setMode('crt')">📺 CRT</button>
+    <button class="mode-btn"        id="btn-anime"  onclick="setMode('anime')">✨ Anime</button>
+    <button class="mode-btn"        id="btn-god"    onclick="toggleGodMode()">⚡ God Mode</button>
   </div>
 
   <!-- CSS overlays -->
@@ -366,24 +444,18 @@ body {
   <div id="overlay-vignette-nvg"></div>
   <div id="overlay-anime"></div>
 
-  <!-- Targeting reticle (God Mode) -->
+  <!-- Reticle -->
   <div id="reticle">
-    <svg width="130" height="130" viewBox="0 0 130 130">
-      <circle cx="65" cy="65" r="55" fill="none" stroke="#ff3333" stroke-width="1" stroke-dasharray="5 5" opacity="0.7"/>
-      <circle cx="65" cy="65" r="6"  fill="none" stroke="#ff3333" stroke-width="1.5"/>
-      <line x1="65" y1="0"   x2="65" y2="53"  stroke="#ff3333" stroke-width="1" opacity="0.7"/>
-      <line x1="65" y1="77"  x2="65" y2="130" stroke="#ff3333" stroke-width="1" opacity="0.7"/>
-      <line x1="0"   y1="65" x2="53" y2="65"  stroke="#ff3333" stroke-width="1" opacity="0.7"/>
-      <line x1="77"  y1="65" x2="130" y2="65" stroke="#ff3333" stroke-width="1" opacity="0.7"/>
-      <text x="70" y="20" fill="#ff3333" font-family="Courier New" font-size="8" letter-spacing="2">TRACKING</text>
+    <svg width="120" height="120" viewBox="0 0 120 120" opacity="0.8">
+      <circle cx="60" cy="60" r="50" fill="none" stroke="#f87171" stroke-width="1" stroke-dasharray="4 6"/>
+      <circle cx="60" cy="60" r="5"  fill="none" stroke="#f87171" stroke-width="1.5"/>
+      <line x1="60" y1="0"   x2="60" y2="48"  stroke="#f87171" stroke-width="1"/>
+      <line x1="60" y1="72"  x2="60" y2="120" stroke="#f87171" stroke-width="1"/>
+      <line x1="0"   y1="60" x2="48" y2="60"  stroke="#f87171" stroke-width="1"/>
+      <line x1="72"  y1="60" x2="120" y2="60" stroke="#f87171" stroke-width="1"/>
     </svg>
   </div>
 
-  <!-- Keyboard hints -->
-  <div id="keyhints">
-    [1] STANDARD  [2] NVG  [3] FLIR  [4] CRT  [5] ANIME  [G] GOD MODE<br>
-    CLICK ENTITY FOR INTEL · SCROLL TO ZOOM · DRAG TO ORBIT
-  </div>
 </div>
 
 <script>
@@ -952,24 +1024,24 @@ function setMode(mode) {
     case 'nvg':
       shaderStages.nvg.enabled = true;
       document.getElementById('overlay-vignette-nvg').style.display = 'block';
-      document.getElementById('modeDisplay').textContent = 'MODE: NIGHT VISION';
+      document.getElementById('modeDisplay').textContent = '🟢 Night Vision';
       break;
     case 'flir':
       shaderStages.flir.enabled = true;
-      document.getElementById('modeDisplay').textContent = 'MODE: FLIR THERMAL';
+      document.getElementById('modeDisplay').textContent = '🔥 Thermal';
       break;
     case 'crt':
       shaderStages.crt.enabled = true;
       document.getElementById('overlay-scanlines').style.display = 'block';
-      document.getElementById('modeDisplay').textContent = 'MODE: CRT DISPLAY';
+      document.getElementById('modeDisplay').textContent = '📺 CRT';
       break;
     case 'anime':
       shaderStages.anime.enabled = true;
       document.getElementById('overlay-anime').style.display = 'block';
-      document.getElementById('modeDisplay').textContent = 'MODE: ANIME';
+      document.getElementById('modeDisplay').textContent = '✨ Anime';
       break;
     default:
-      document.getElementById('modeDisplay').textContent = 'MODE: STANDARD';
+      document.getElementById('modeDisplay').textContent = '🌍 Standard';
   }
 }
 
@@ -1000,7 +1072,7 @@ function toggleGodMode() {
     notify(`PANOPTIC VIEW — TRACKING ${ac} AIRCRAFT + ${sat} SATELLITES`, true);
   } else {
     btn.classList.remove('god-on');
-    btn.textContent = 'GOD MODE';
+    btn.textContent = '⚡ God Mode';
     reticle.style.display = 'none';
 
     Object.values(aircraftMap).forEach(e => {
@@ -1012,8 +1084,25 @@ function toggleGodMode() {
       e.point.color   = mil ? Cesium.Color.RED : Cesium.Color.YELLOW;
       e.point.pixelSize = 3;
     });
-    document.getElementById('modeDisplay').textContent =
-      currentMode === 'normal' ? 'MODE: STANDARD' : 'MODE: ' + currentMode.toUpperCase();
+  }
+}
+
+// ================================================================
+// SIDEBAR TOGGLE
+// ================================================================
+let sidebarOpen = true;
+function toggleSidebar() {
+  sidebarOpen = !sidebarOpen;
+  const sb  = document.getElementById('sidebar');
+  const btn = document.getElementById('sidebarToggle');
+  if (sidebarOpen) {
+    sb.classList.remove('hidden');
+    btn.style.right = '268px';
+    btn.textContent = '⊞';
+  } else {
+    sb.classList.add('hidden');
+    btn.style.right = '16px';
+    btn.textContent = '⊟';
   }
 }
 
@@ -1037,38 +1126,34 @@ function initClickHandler() {
       const alt = props.altitude?.getValue() || 0;
       const spd = props.speed?.getValue()    || 0;
       const hdg = props.heading?.getValue()  || 0;
-      const ctry= props.country?.getValue()  || 'UNKNOWN';
+      const ctry= props.country?.getValue()  || 'Unknown';
       const icao= props.icao?.getValue()     || '---';
-      html = `
-        <div style="color:#00ffcc;margin-bottom:5px;letter-spacing:2px">${cs}</div>
-        TYPE: AIRCRAFT<br>
-        ICAO: ${icao}<br>
-        ALT:  ${alt} m<br>
-        SPD:  ${spd} m/s<br>
-        HDG:  ${hdg}°<br>
-        ORIGIN: ${ctry}`;
+      html = `<span class="t-name">✈ ${cs}</span>
+        <span style="color:var(--aircraft);font-size:10px;font-weight:600">AIRCRAFT</span><br><br>
+        ICAO &nbsp;&nbsp; ${icao}<br>
+        Alt &nbsp;&nbsp;&nbsp;&nbsp; ${Math.round(alt).toLocaleString()} m<br>
+        Speed &nbsp;&nbsp; ${Math.round(spd)} m/s<br>
+        Heading &nbsp; ${Math.round(hdg)}°<br>
+        Origin &nbsp;&nbsp; ${ctry}`;
     } else if (type === 'satellite') {
       const name = props.satName?.getValue()  || entity.name;
       const alt  = props.altitude?.getValue() || 0;
       const mil  = props.isMilitary?.getValue();
-      html = `
-        <div style="color:#ffff00;margin-bottom:5px;letter-spacing:2px">${name}</div>
-        TYPE: SATELLITE<br>
-        ALT:  ${alt} km<br>
-        CLASS: ${mil ? '<span style="color:#ff3333">MILITARY</span>' : 'CIVILIAN'}`;
+      html = `<span class="t-name">🛰 ${name}</span>
+        <span style="color:${mil ? 'var(--danger)' : 'var(--satellite)'};font-size:10px;font-weight:600">${mil ? 'MILITARY SAT' : 'SATELLITE'}</span><br><br>
+        Altitude &nbsp; ${Math.round(alt).toLocaleString()} km<br>
+        Class &nbsp;&nbsp;&nbsp;&nbsp; ${mil ? 'Classified' : 'Civilian'}`;
     } else if (type === 'cctv') {
       const name = props.camName?.getValue() || entity.name;
-      html = `
-        <div style="color:#cc00ff;margin-bottom:5px;letter-spacing:2px">${name}</div>
-        TYPE: CCTV NODE<br>
-        STATUS: <span style="color:#00ff41">LIVE</span><br>
-        FEED: PUBLIC TRAFFIC<br>
-        RESOLUTION: 1080p`;
+      html = `<span class="t-name">📷 ${name}</span>
+        <span style="color:var(--cctv);font-size:10px;font-weight:600">CCTV NODE</span><br><br>
+        Status &nbsp;&nbsp;&nbsp; <span style="color:#22c55e">Live</span><br>
+        Feed &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Public Traffic<br>
+        Location &nbsp; Austin, TX`;
     } else if (type === 'vehicle') {
-      html = `
-        <div style="color:#ff8800;margin-bottom:5px;">VEHICLE</div>
-        ROAD: ${props.road?.getValue() || 'UNKNOWN'}<br>
-        STATUS: IN TRANSIT`;
+      html = `<span class="t-name">🚗 Vehicle</span>
+        Road &nbsp;&nbsp; ${props.road?.getValue() || 'Unknown'}<br>
+        Status &nbsp; In Transit`;
     }
 
     if (html) {
@@ -1089,8 +1174,8 @@ function startHUDUpdates() {
     const lat = Cesium.Math.toDegrees(carto.latitude).toFixed(4);
     const alt = carto.height;
     const altStr = alt >= 1000 ? (alt / 1000).toFixed(1) + ' km' : Math.round(alt) + ' m';
-    document.getElementById('coordDisplay').textContent = `LAT: ${lat}  LON: ${lon}`;
-    document.getElementById('altDisplay').textContent   = `ALT: ${altStr}`;
+    document.getElementById('coordDisplay').textContent = `${lat}, ${lon}`;
+    document.getElementById('altDisplay').textContent   = altStr;
   });
 
   // Clock
@@ -1100,7 +1185,7 @@ function startHUDUpdates() {
     const loc = now.toLocaleTimeString();
     const date = now.toISOString().split('T')[0];
     document.getElementById('clock').innerHTML =
-      `UTC: ${utc}<br>${date}<br>LOCAL: ${loc}`;
+      `<span style="color:var(--muted);font-size:10px">UTC</span>&nbsp; ${utc}<br><span style="color:var(--muted);font-size:10px">LOCAL</span>&nbsp; ${loc}<br><span style="color:var(--muted);font-size:10px">DATE</span>&nbsp; ${date}`;
   }, 1000);
 }
 
