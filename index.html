@@ -1176,6 +1176,7 @@ async function fetchSatellites(){
     }
     document.getElementById('satelliteCount').textContent=satelliteTLEs.length.toString();
     document.getElementById('sr-sat').textContent=satelliteTLEs.length;
+    document.getElementById('hs-sat').textContent=satelliteTLEs.length;
     notify('🛰️ '+satelliteTLEs.length+' satellites loaded');
   }catch(e){
     loadDemoSatellites();
@@ -1438,30 +1439,27 @@ function initVehicleParticles(){
 // ═══════════════════════════════════════════════════════════════
 function toggleLayer(name,on){
   layers[name]=on;
-  if(name==='satellites'){
-    Object.values(satelliteMap).forEach(e=>e.show=on);
-  }else if(name==='warzones'){
-    warzoneEntities.forEach(e=>e.show=on);
-  }else if(name==='vectors'){
-    Object.values(vectorMap).forEach(e=>e.show=on&&layers[e._layerKey]||on);
-  }else if(name==='cctv'){
-    cctvEntities.forEach(e=>e.show=on);
-  }else if(['mil_ac','vip_ac','civ_ac'].includes(name)){
-    const map={'mil_ac':'mil','vip_ac':'vip','civ_ac':'civ'};
-    const cls=map[name];
-    Object.values(aircraftMap).forEach(e=>{
-      if(e.properties?.acClass?.getValue()===cls)e.show=on;
-    });
-    Object.values(vectorMap).forEach(e=>{
-      if(e.properties?.acClass?.getValue()===cls)e.show=on&&layers.vectors;
-    });
-  }else if(['war_ships','oil_ships','cargo_ships','pass_ships'].includes(name)){
-    const tmap={'war_ships':'warship','oil_ships':'tanker','cargo_ships':'cargo','pass_ships':'passenger'};
-    const t=tmap[name];
-    Object.values(vesselMap).forEach(e=>{
-      if(e.properties?.vesselType?.getValue()===t)e.show=on;
-    });
+  // aircraft classes
+  if(['mil_ac','vip_ac','civ_ac'].includes(name)){
+    const cls={mil_ac:'mil',vip_ac:'vip',civ_ac:'civ'}[name];
+    Object.values(aircraftMap).forEach(e=>{if(e.properties?.acClass?.getValue()===cls)e.show=on;});
+    Object.values(vectorMap).forEach(e=>{if(e.properties?.acClass?.getValue()===cls)e.show=on&&layers.vectors;});
   }
+  // vessel classes
+  else if(['war_ships','oil_ships','cargo_ships','pass_ships'].includes(name)){
+    const t={war_ships:'warship',oil_ships:'tanker',cargo_ships:'cargo',pass_ships:'passenger'}[name];
+    Object.values(vesselMap).forEach(e=>{if(e.properties?.vesselType?.getValue()===t)e.show=on;});
+  }
+  // other layers
+  else if(name==='satellites'){Object.values(satelliteMap).forEach(e=>e.show=on);if(issEntity)issEntity.show=on;}
+  else if(name==='warzones'){warzoneEntities.forEach(e=>e.show=on);}
+  else if(name==='vectors'){Object.values(vectorMap).forEach(e=>e.show=on&&layers[e._layerKey]||on);}
+  else if(name==='cctv'){cctvEntities.forEach(e=>e.show=on);}
+  else if(name==='quakes'){quakeEntities.forEach(e=>e.show=on);}
+  else if(name==='fires'){eonetEntities.forEach(e=>{if(e.properties?.layer?.getValue()==='fires')e.show=on;});}
+  else if(name==='eonet'){eonetEntities.forEach(e=>{if(e.properties?.layer?.getValue()==='eonet')e.show=on;});}
+  else if(name==='mil_bases'){baseEntities.forEach(e=>e.show=on);}
+  else if(name==='acled'){acledEntities.forEach(e=>e.show=on);}
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1646,10 +1644,13 @@ function startHUDUpdates(){
       document.getElementById('gh-cctv').textContent=cctvEntities.length;
       document.getElementById('gh-eq').textContent=quakeEntities.length;
     }
-    // update header stats
-    document.getElementById('hs-ac').textContent=Object.keys(aircraftMap).length||'—';
-    document.getElementById('hs-ship').textContent=Object.keys(vesselMap).length||'—';
-    document.getElementById('hs-sat').textContent=Object.keys(satelliteMap).length||'—';
+    // update header stats (always show numbers once loading has started)
+    const acN=Object.keys(aircraftMap).length;
+    const shipN=Object.keys(vesselMap).length;
+    const satN=Object.keys(satelliteMap).length+(issEntity?1:0);
+    document.getElementById('hs-ac').textContent=acN>0?acN:'…';
+    document.getElementById('hs-ship').textContent=shipN>0?shipN:'…';
+    document.getElementById('hs-sat').textContent=satN>0?satN:'…';
   },1000);
 }
 
@@ -1755,7 +1756,11 @@ async function fetchEarthquakes(){
     notify(`🔴 ${feats.length} earthquakes loaded (24h)`);
     setTimeout(renderEQList,500);
     computeThreat();
-  }catch(e){console.warn('[USGS]',e);}
+  }catch(e){
+    console.warn('[USGS]',e);
+    document.getElementById('hs-eq').textContent='?';
+    document.getElementById('sr-quake').textContent='?';
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1861,19 +1866,7 @@ async function fetchISSPosition(){
   }catch(e){}
 }
 
-// ═══════════════════════════════════════════════════════════════
-// LAYER TOGGLE additions
-// ═══════════════════════════════════════════════════════════════
-const _origToggle=toggleLayer;
-function toggleLayer(name,on){
-  layers[name]=on;
-  if(name==='quakes'){quakeEntities.forEach(e=>e.show=on);}
-  else if(name==='fires'){eonetEntities.forEach(e=>{if(e.properties?.layer?.getValue()==='fires')e.show=on;});}
-  else if(name==='eonet'){eonetEntities.forEach(e=>{if(e.properties?.layer?.getValue()==='eonet')e.show=on;});}
-  else if(name==='mil_bases'){baseEntities.forEach(e=>e.show=on);}
-  else if(name==='acled'){acledEntities.forEach(e=>e.show=on);}
-  else{_origToggle(name,on);}
-}
+// (layer toggle for quakes/fires/eonet/bases/acled merged into main toggleLayer above)
 
 // ═══════════════════════════════════════════════════════════════
 // GLOBAL MILITARY BASES — open-source data
@@ -2143,22 +2136,25 @@ const SAT_FEEDS = [
 ];
 
 const CAM_FEEDS = [
-  {name:'Times Square',      loc:'New York City, USA',    lat:40.7580,  lon:-73.9855},
-  {name:'Tower Bridge',      loc:'London, UK',            lat:51.5055,  lon:-0.0754},
-  {name:'Shibuya Crossing',  loc:'Tokyo, Japan',          lat:35.6595,  lon:139.7004},
-  {name:'Eiffel Tower',      loc:'Paris, France',         lat:48.8584,  lon:2.2945},
-  {name:'Burj Khalifa',      loc:'Dubai, UAE',            lat:25.1972,  lon:55.2744},
-  {name:'Marina Bay Sands',  loc:'Singapore',             lat:1.2834,   lon:103.8607},
-  {name:'Harbour Bridge',    loc:'Sydney, Australia',     lat:-33.8523, lon:151.2108},
-  {name:'Brooklyn Bridge',   loc:'New York City, USA',    lat:40.7061,  lon:-73.9969},
-  {name:'Trafalgar Square',  loc:'London, UK',            lat:51.5080,  lon:-0.1281},
-  {name:'Piccadilly Circus', loc:'London, UK',            lat:51.5099,  lon:-0.1356},
-  {name:'Champs-Élysées',    loc:'Paris, France',         lat:48.8698,  lon:2.3078},
-  {name:'Shinjuku Station',  loc:'Tokyo, Japan',          lat:35.6938,  lon:139.7034},
-  {name:'I-35 & MLK',        loc:'Austin TX, USA',        lat:30.2849,  lon:-97.7341},
-  {name:'Congress & 6th',    loc:'Austin TX, USA',        lat:30.2682,  lon:-97.7404},
-  {name:'Barton Springs',    loc:'Austin TX, USA',        lat:30.2626,  lon:-97.7708},
-  {name:'6th & Lamar',       loc:'Austin TX, USA',        lat:30.2707,  lon:-97.7538},
+  // YouTube 24/7 live streams where URL is known reliable
+  {name:'Times Square Live',  loc:'New York City, USA',    lat:40.7580,  lon:-73.9855,
+   url:'https://www.youtube.com/embed/1EiC9bvVGnk?autoplay=1&mute=1&rel=0'},
+  {name:'Tower Bridge',       loc:'London, UK',            lat:51.5055,  lon:-0.0754},
+  {name:'Shibuya Crossing',   loc:'Tokyo, Japan',          lat:35.6595,  lon:139.7004,
+   url:'https://www.youtube.com/embed/tnamNFoM4Gs?autoplay=1&mute=1&rel=0'},
+  {name:'Eiffel Tower',       loc:'Paris, France',         lat:48.8584,  lon:2.2945},
+  {name:'Burj Khalifa',       loc:'Dubai, UAE',            lat:25.1972,  lon:55.2744},
+  {name:'Marina Bay Sands',   loc:'Singapore',             lat:1.2834,   lon:103.8607},
+  {name:'Harbour Bridge',     loc:'Sydney, Australia',     lat:-33.8523, lon:151.2108},
+  {name:'Brooklyn Bridge',    loc:'New York City, USA',    lat:40.7061,  lon:-73.9969},
+  {name:'Trafalgar Square',   loc:'London, UK',            lat:51.5080,  lon:-0.1281},
+  {name:'Piccadilly Circus',  loc:'London, UK',            lat:51.5099,  lon:-0.1356},
+  {name:'Champs-Élysées',     loc:'Paris, France',         lat:48.8698,  lon:2.3078},
+  {name:'Shinjuku Station',   loc:'Tokyo, Japan',          lat:35.6938,  lon:139.7034},
+  {name:'I-35 & MLK Austin',  loc:'Austin TX, USA',        lat:30.2849,  lon:-97.7341},
+  {name:'Congress & 6th',     loc:'Austin TX, USA',        lat:30.2682,  lon:-97.7404},
+  {name:'Barton Springs',     loc:'Austin TX, USA',        lat:30.2626,  lon:-97.7708},
+  {name:'6th & Lamar',        loc:'Austin TX, USA',        lat:30.2707,  lon:-97.7538},
 ];
 
 let camGridTab = 'sat';
@@ -2236,14 +2232,13 @@ function renderCamGrid(){
                  <div class="cam-fly-loc">Loading Windy cameras…</div>
                </div>`
             : `<div class="cam-fly">
-                 <div class="cam-fly-ico">${isSat?'🛰️':'📷'}</div>
-                 <div class="cam-fly-loc">${cam.loc}</div>
-                 ${!isSat && !hasWindy
-                   ? `<div style="font-size:9px;color:var(--muted);text-align:center;max-width:150px;margin-bottom:6px;">Add Windy API key for live feeds</div>`
-                   : ''}
+                 <div class="cam-fly-ico">${isSat?'🛰️':'🌍'}</div>
+                 <div class="cam-fly-loc">${cam.name}</div>
+                 <div style="font-size:9px;color:rgba(45,212,191,0.4);margin-bottom:6px;">${cam.loc}</div>
                  <button class="cam-fly-btn" onclick="flyToView(${flyLat},${flyLon},${flyAlt})">
-                   ${isSat?'🌍 Globe View':'🎯 Satellite View'}
+                   ${isSat?'🌍 Globe View':'🎯 Fly to Location'}
                  </button>
+                 ${!isSat&&!hasWindy?`<div style="font-size:8px;color:rgba(100,116,139,0.4);margin-top:6px;">Add Windy key for live feeds</div>`:''}
                </div>`
         }
       </div>
@@ -2350,7 +2345,7 @@ function computeThreat(){
   currentThreat=t;
   const el=document.getElementById('hs-threat');
   const hdr=document.getElementById('hdr-threat');
-  if(el)el.textContent=t;
+  if(el)el.textContent=t.toFixed(1);
   const col=t<3?'#22c55e':t<5?'#fbbf24':t<7?'#f97316':'#ef4444';
   if(hdr){hdr.style.color=col;hdr.style.borderRadius='4px';hdr.style.background=col+'18';}
   document.getElementById('bb-global').textContent=`🌍 ${quakeEntities.length} EQ · ☀️ Kp${currentKp} · ⚡ Threat ${t}/10`;
@@ -2373,6 +2368,7 @@ async function fetchSpaceWeather(){
       const kpLabel=kp<3?'QUIET':kp<4?'UNSETTLED':kp<5?'ACTIVE':kp<6?'MINOR STORM':'STORM';
       const kpCol=kp<3?'#22c55e':kp<4?'#fbbf24':kp<5?'#f97316':'#ef4444';
       document.getElementById('hs-kp').textContent=kp.toFixed(1);
+      document.getElementById('hs-threat').textContent=currentThreat||'…';
       const kpEl=document.getElementById('hdr-kp');
       if(kpEl)kpEl.style.color=kpCol;
       document.getElementById('sw-kp').textContent=kp.toFixed(1);
@@ -2513,7 +2509,6 @@ async function fetchGDELT(){
         </div>
       </div>`;
     }).join('');
-    ipTab('news');// switch to news tab to show
   }catch(e){console.warn('[GDELT]',e);}
 }
 
@@ -2621,6 +2616,10 @@ function hideLoader(){
 }
 
 (async()=>{
+  // init header immediately
+  ['hs-ac','hs-ship','hs-sat','hs-eq','hs-threat','hs-kp'].forEach(id=>{
+    const el=document.getElementById(id);if(el&&el.textContent==='—')el.textContent='…';
+  });
   setLoad(8,'Booting CesiumJS...');
   try{initCesium();}catch(e){console.error('[Cesium]',e);}
 
