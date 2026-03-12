@@ -176,6 +176,79 @@ body{background:#000;font-family:'Inter',system-ui,sans-serif;overflow:hidden;co
 @keyframes na{0%{opacity:0;transform:translateX(-50%) translateY(-6px);}
 12%{opacity:1;transform:translateX(-50%) translateY(0);}75%{opacity:1;}100%{opacity:0;}}
 
+/* ── CAMERA GRID OVERLAY ── */
+#camGrid{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(3,5,12,0.97);backdrop-filter:blur(20px);
+  display:none;flex-direction:column;
+}
+#camGrid.open{display:flex;}
+.cg-header{
+  display:flex;align-items:center;padding:10px 14px;
+  border-bottom:1px solid var(--border);gap:10px;flex-shrink:0;
+}
+.cg-title{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--accent);text-transform:uppercase;flex-shrink:0;}
+.cg-tabs{display:flex;gap:4px;}
+.cg-tab{
+  background:transparent;border:1px solid var(--border);border-radius:6px;
+  color:var(--muted);padding:5px 12px;font-size:11px;font-family:'Inter',system-ui;
+  cursor:pointer;transition:all 0.15s;
+}
+.cg-tab.active{background:rgba(45,212,191,0.12);border-color:var(--accent);color:var(--accent);}
+.cg-nav{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.cg-nav-btn{
+  background:transparent;border:1px solid var(--border);border-radius:6px;
+  color:var(--muted);padding:4px 10px;font-size:11px;cursor:pointer;font-family:'Inter',system-ui;
+}
+.cg-nav-btn:hover{color:var(--text);}
+.cg-page{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:36px;text-align:center;}
+.cg-close{
+  background:transparent;border:1px solid var(--border);border-radius:6px;
+  color:var(--muted);width:28px;height:28px;cursor:pointer;font-size:14px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.cg-close:hover{color:var(--text);}
+.cg-grid{
+  flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+  gap:5px;padding:5px;min-height:0;
+}
+.cam-tile{
+  background:rgba(8,10,18,0.9);border:1px solid var(--border);border-radius:8px;
+  overflow:hidden;display:flex;flex-direction:column;position:relative;
+  transition:border-color 0.2s;
+}
+.cam-tile:hover{border-color:rgba(45,212,191,0.4);}
+.cam-tile-hdr{
+  padding:5px 10px;display:flex;align-items:center;gap:6px;
+  background:rgba(0,0,0,0.55);border-bottom:1px solid var(--border);
+  flex-shrink:0;justify-content:space-between;
+}
+.cam-tile-name{font-size:10px;font-weight:600;color:var(--text);}
+.cam-tile-loc{font-size:9px;color:var(--muted);}
+.cam-dot-live{width:6px;height:6px;border-radius:50%;background:#22c55e;
+  box-shadow:0 0 5px #22c55e;animation:ldot 1.5s ease-in-out infinite;flex-shrink:0;}
+.cam-dot-off{width:6px;height:6px;border-radius:50%;background:#6b7280;flex-shrink:0;}
+@keyframes ldot{0%,100%{opacity:1;}50%{opacity:0.35;}}
+.cam-body{flex:1;position:relative;overflow:hidden;min-height:0;}
+.cam-body iframe{width:100%;height:100%;border:none;display:block;}
+.cam-fly{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;
+  background:rgba(6,8,18,0.92);
+}
+.cam-fly-ico{font-size:32px;line-height:1;}
+.cam-fly-loc{font-size:10px;color:var(--muted);text-align:center;max-width:160px;}
+.cam-fly-btn{
+  background:rgba(45,212,191,0.12);border:1px solid var(--accent);border-radius:6px;
+  color:var(--accent);padding:6px 18px;font-size:11px;cursor:pointer;
+  font-family:'Inter',system-ui;transition:background 0.15s;
+}
+.cam-fly-btn:hover{background:rgba(45,212,191,0.22);}
+.cam-idx{
+  position:absolute;top:6px;left:8px;font-size:9px;font-weight:700;
+  letter-spacing:1.5px;color:rgba(45,212,191,0.5);pointer-events:none;
+}
+
 /* Loading */
 #loading{
   position:absolute;inset:0;background:#050810;
@@ -306,6 +379,10 @@ body{background:#000;font-family:'Inter',system-ui,sans-serif;overflow:hidden;co
       <span class="tog-label"><span>📷</span> CCTV Nodes</span>
       <input type="checkbox" checked onchange="toggleLayer('cctv',this.checked)"><div class="sw"></div>
     </label>
+    <div style="border-top:1px solid var(--border);margin-top:7px;padding-top:7px;display:flex;flex-direction:column;gap:3px;">
+      <button class="disp-btn" onclick="openCamGrid('sat')">🛰️ Satellite Feeds</button>
+      <button class="disp-btn" onclick="openCamGrid('cam')">📷 Camera Feeds</button>
+    </div>
   </div>
 
   <!-- SITREP -->
@@ -371,6 +448,24 @@ body{background:#000;font-family:'Inter',system-ui,sans-serif;overflow:hidden;co
 <div id="ol-nvg"></div>
 <div id="ol-anime"></div>
 <div id="ol-tactical"></div>
+
+<!-- ── CAMERA GRID ── -->
+<div id="camGrid">
+  <div class="cg-header">
+    <div class="cg-title">📡 Live Surveillance</div>
+    <div class="cg-tabs">
+      <button class="cg-tab active" id="cgTabSat" onclick="switchCamTab('sat')">🛰️ Satellite</button>
+      <button class="cg-tab" id="cgTabCam" onclick="switchCamTab('cam')">📷 CCTV</button>
+    </div>
+    <div class="cg-nav">
+      <button class="cg-nav-btn" onclick="pageCam(-1)">◀ Prev</button>
+      <span class="cg-page" id="cgPageInfo">1 / 1</span>
+      <button class="cg-nav-btn" onclick="pageCam(1)">Next ▶</button>
+    </div>
+    <button class="cg-close" onclick="closeCamGrid()">✕</button>
+  </div>
+  <div class="cg-grid" id="cgGrid"></div>
+</div>
 
 <!-- God Mode reticle -->
 <div id="reticle">
@@ -1174,11 +1269,16 @@ function startHUDUpdates(){
 // KEYBOARD SHORTCUTS
 // ═══════════════════════════════════════════════════════════════
 document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if(document.getElementById('camGrid').classList.contains('open')){closeCamGrid();return;}
+  }
   const k={
     '1':()=>setMode('normal'),'2':()=>setMode('nvg'),'3':()=>setMode('flir'),
     '4':()=>setMode('crt'),  '5':()=>setMode('anime'),'6':()=>setMode('tactical'),
     'g':toggleGodMode,'G':toggleGodMode,
     'i':toggleIntelPanel,'I':toggleIntelPanel,
+    'c':()=>openCamGrid('cam'),'C':()=>openCamGrid('cam'),
+    's':()=>openCamGrid('sat'),'S':()=>openCamGrid('sat'),
   };
   k[e.key]?.();
 });
@@ -1192,6 +1292,126 @@ function notify(text,red=false){
   el.textContent=text;
   document.getElementById('topbar').parentElement.appendChild(el);
   setTimeout(()=>el.remove(),3500);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CAMERA GRID
+// ═══════════════════════════════════════════════════════════════
+const SAT_FEEDS = [
+  {name:'ISS — NASA Live',     loc:'Low Earth Orbit · 408 km',   url:'https://www.youtube.com/embed/RtU_mdL2vBM?autoplay=1&mute=1&rel=0', lat:null, lon:null},
+  {name:'GOES-East Weather',   loc:'Geostationary · 35,786 km',  url:null, lat:5, lon:-75},
+  {name:'Terra / MODIS Pass',  loc:'Polar Orbit · 705 km',       url:null, lat:55, lon:10},
+  {name:'Starlink Cluster',    loc:'LEO Shell · 550 km',         url:null, lat:40, lon:-100},
+  {name:'Sentinel-2 Europe',   loc:'Sun-Sync · 786 km',          url:null, lat:48, lon:15},
+  {name:'ISS — Night Pass',    loc:'Low Earth Orbit · 408 km',   url:'https://www.youtube.com/embed/RtU_mdL2vBM?autoplay=1&mute=1&rel=0&start=7200', lat:null, lon:null},
+  {name:'Aqua Orbit View',     loc:'A-Train · 705 km',           url:null, lat:-15, lon:120},
+  {name:'Suomi NPP Pass',      loc:'Polar Orbit · 824 km',       url:null, lat:0, lon:160},
+];
+
+const CAM_FEEDS = [
+  {name:'Times Square',      loc:'New York City, USA',    lat:40.7580,  lon:-73.9855},
+  {name:'Tower Bridge',      loc:'London, UK',            lat:51.5055,  lon:-0.0754},
+  {name:'Shibuya Crossing',  loc:'Tokyo, Japan',          lat:35.6595,  lon:139.7004},
+  {name:'Eiffel Tower',      loc:'Paris, France',         lat:48.8584,  lon:2.2945},
+  {name:'Burj Khalifa',      loc:'Dubai, UAE',            lat:25.1972,  lon:55.2744},
+  {name:'Marina Bay Sands',  loc:'Singapore',             lat:1.2834,   lon:103.8607},
+  {name:'Harbour Bridge',    loc:'Sydney, Australia',     lat:-33.8523, lon:151.2108},
+  {name:'Brooklyn Bridge',   loc:'New York City, USA',    lat:40.7061,  lon:-73.9969},
+  {name:'Trafalgar Square',  loc:'London, UK',            lat:51.5080,  lon:-0.1281},
+  {name:'Piccadilly Circus', loc:'London, UK',            lat:51.5099,  lon:-0.1356},
+  {name:'Champs-Élysées',    loc:'Paris, France',         lat:48.8698,  lon:2.3078},
+  {name:'Shinjuku Station',  loc:'Tokyo, Japan',          lat:35.6938,  lon:139.7034},
+  {name:'I-35 & MLK',        loc:'Austin TX, USA',        lat:30.2849,  lon:-97.7341},
+  {name:'Congress & 6th',    loc:'Austin TX, USA',        lat:30.2682,  lon:-97.7404},
+  {name:'Barton Springs',    loc:'Austin TX, USA',        lat:30.2626,  lon:-97.7708},
+  {name:'6th & Lamar',       loc:'Austin TX, USA',        lat:30.2707,  lon:-97.7538},
+];
+
+let camGridTab = 'sat';
+let camGridPage = 0;
+const CAM_PER_PAGE = 4;
+
+function openCamGrid(tab){
+  camGridTab = tab;
+  camGridPage = 0;
+  document.getElementById('cgTabSat').classList.toggle('active', tab==='sat');
+  document.getElementById('cgTabCam').classList.toggle('active', tab==='cam');
+  renderCamGrid();
+  document.getElementById('camGrid').classList.add('open');
+}
+
+function closeCamGrid(){
+  document.getElementById('camGrid').classList.remove('open');
+  // kill iframes to stop audio/video
+  document.getElementById('cgGrid').innerHTML='';
+}
+
+function switchCamTab(tab){
+  camGridTab = tab;
+  camGridPage = 0;
+  document.getElementById('cgTabSat').classList.toggle('active', tab==='sat');
+  document.getElementById('cgTabCam').classList.toggle('active', tab==='cam');
+  renderCamGrid();
+}
+
+function pageCam(dir){
+  const feeds = camGridTab==='sat' ? SAT_FEEDS : CAM_FEEDS;
+  const pages = Math.ceil(feeds.length / CAM_PER_PAGE);
+  camGridPage = Math.max(0, Math.min(pages-1, camGridPage+dir));
+  renderCamGrid();
+}
+
+function renderCamGrid(){
+  const feeds = camGridTab==='sat' ? SAT_FEEDS : CAM_FEEDS;
+  const pages = Math.ceil(feeds.length / CAM_PER_PAGE);
+  document.getElementById('cgPageInfo').textContent = `${camGridPage+1} / ${pages}`;
+  const start = camGridPage * CAM_PER_PAGE;
+  const visible = feeds.slice(start, start + CAM_PER_PAGE);
+  const grid = document.getElementById('cgGrid');
+  grid.innerHTML = '';
+  visible.forEach((cam, idx)=>{
+    const n = start + idx + 1;
+    const tile = document.createElement('div');
+    tile.className = 'cam-tile';
+    const hasStream = !!(cam.url);
+    const isSat = camGridTab==='sat';
+    const flyAlt = isSat ? 2000000 : 500;
+    const flyLat = cam.lat ?? 0;
+    const flyLon = cam.lon ?? 0;
+    tile.innerHTML = `
+      <div class="cam-tile-hdr">
+        <div>
+          <div class="cam-tile-name">${isSat?'🛰️':'📷'} ${cam.name}</div>
+          <div class="cam-tile-loc">${cam.loc}</div>
+        </div>
+        <div class="${hasStream?'cam-dot-live':'cam-dot-off'}" title="${hasStream?'Live stream':'Satellite view'}"></div>
+      </div>
+      <div class="cam-body">
+        <div class="cam-idx">CAM ${String(n).padStart(2,'0')}</div>
+        ${hasStream
+          ? `<iframe src="${cam.url}" allowfullscreen allow="autoplay;encrypted-media" loading="lazy"></iframe>`
+          : `<div class="cam-fly">
+               <div class="cam-fly-ico">${isSat?'🛰️':'📷'}</div>
+               <div class="cam-fly-loc">${cam.loc}</div>
+               <button class="cam-fly-btn" onclick="flyToView(${flyLat},${flyLon},${flyAlt})">
+                 ${isSat?'🌍 Globe View':'🎯 Satellite View'}
+               </button>
+             </div>`
+        }
+      </div>
+    `;
+    grid.appendChild(tile);
+  });
+}
+
+function flyToView(lat, lon, alt){
+  closeCamGrid();
+  viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(lon, lat, alt),
+    orientation: {heading:0, pitch:Cesium.Math.toRadians(-90), roll:0},
+    duration: 2,
+  });
+  notify(`🎯 Viewing ${lat.toFixed(2)}°, ${lon.toFixed(2)}°`);
 }
 
 // ═══════════════════════════════════════════════════════════════
