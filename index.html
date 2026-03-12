@@ -33,44 +33,122 @@
   --c-zone:#ef4444;
 }
 body{background:#000;font-family:'Inter',system-ui,sans-serif;overflow:hidden;color:var(--text);}
-#cesiumContainer{width:100vw;height:100vh;}
+#cesiumContainer{position:fixed;inset:0;width:100vw;height:100vh;}
 .cesium-widget-credits,.cesium-viewer-bottom{display:none!important;}
 
-/* ── TOP BAR ── */
-#topbar{
-  position:absolute;top:12px;left:12px;right:12px;
-  display:flex;align-items:center;gap:8px;
-  pointer-events:none;z-index:100;
+/* ── HEADER ── */
+#hdr{
+  position:fixed;top:0;left:0;right:0;height:44px;z-index:200;
+  background:rgba(4,6,14,0.97);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:0;
 }
-.logo{
-  background:var(--bg);backdrop-filter:blur(14px);
-  border:1px solid var(--border);border-radius:var(--r);
-  padding:7px 14px;font-size:12px;font-weight:700;
+#hdr-logo{
+  flex-shrink:0;padding:0 14px;font-size:11px;font-weight:700;
   letter-spacing:4px;color:var(--accent);text-transform:uppercase;
-  flex-shrink:0;
+  border-right:1px solid var(--border);height:100%;display:flex;align-items:center;gap:8px;
 }
-.coord-pill{
-  background:var(--bg);backdrop-filter:blur(14px);
-  border:1px solid var(--border);border-radius:var(--r);
-  padding:7px 12px;font-size:10px;font-family:'Courier New',monospace;
-  color:var(--muted);display:flex;gap:10px;
+.live-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;
+  box-shadow:0 0 6px #22c55e;animation:ld 1.8s ease-in-out infinite;flex-shrink:0;}
+@keyframes ld{0%,100%{opacity:1;}50%{opacity:0.3;}}
+#hdr-stats{
+  display:flex;align-items:center;gap:2px;padding:0 8px;flex-shrink:0;
+  border-right:1px solid var(--border);height:100%;
 }
-.coord-pill span{color:var(--text);}
+.hstat{
+  display:flex;align-items:center;gap:3px;padding:2px 7px;
+  font-size:10px;font-weight:600;font-variant-numeric:tabular-nums;
+  border-radius:4px;cursor:default;
+}
+.hstat:hover{background:rgba(255,255,255,0.04);}
+.hstat-num{color:var(--text);}
+.hstat-ico{font-size:11px;}
+#hdr-threat{
+  display:flex;align-items:center;gap:4px;padding:2px 8px;
+  font-size:10px;font-weight:700;border-radius:4px;margin-left:2px;
+}
+#hdr-kp{
+  display:flex;align-items:center;gap:4px;padding:2px 8px;
+  font-size:10px;font-weight:600;border-radius:4px;color:var(--muted);
+}
+#hdr-ticker{
+  flex:1;overflow:hidden;border-right:1px solid var(--border);
+  height:100%;display:flex;align-items:center;
+  mask-image:linear-gradient(to right,transparent 0,black 40px,black calc(100% - 40px),transparent 100%);
+}
+#ticker-inner{
+  display:inline-flex;align-items:center;gap:0;
+  animation:tickScroll 80s linear infinite;white-space:nowrap;
+}
+@keyframes tickScroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.tick-item{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:0 12px;height:44px;font-size:10px;font-weight:600;
+  border-right:1px solid rgba(255,255,255,0.04);flex-shrink:0;
+}
+.tick-sym{color:var(--muted);font-size:9px;letter-spacing:0.5px;}
+.tick-price{color:var(--text);font-variant-numeric:tabular-nums;}
+.tick-up{color:#22c55e;}.tick-dn{color:#ef4444;}
+#hdr-clock{
+  flex-shrink:0;padding:0 14px;font-size:10px;
+  font-family:'Courier New',monospace;color:var(--muted);
+  border-left:1px solid var(--border);height:100%;
+  display:flex;align-items:center;gap:10px;
+}
+#hdr-clock span{color:var(--text);}
+#hdr-coords{
+  flex-shrink:0;padding:0 10px;font-size:9px;
+  font-family:'Courier New',monospace;color:var(--muted);
+  border-left:1px solid var(--border);height:100%;
+  display:flex;align-items:center;gap:6px;
+}
+#hdr-coords span{color:var(--text);}
 #modeTag{
-  margin-left:auto;background:var(--bg);backdrop-filter:blur(14px);
-  border:1px solid var(--border);border-radius:var(--r);
-  padding:7px 12px;font-size:11px;font-weight:500;color:var(--accent);
+  flex-shrink:0;padding:0 10px;font-size:10px;font-weight:600;
+  color:var(--accent);border-left:1px solid var(--border);
+  height:100%;display:flex;align-items:center;
 }
 
 /* ── LEFT PANEL ── */
-#leftPanel{
-  position:absolute;top:52px;left:12px;bottom:12px;
-  width:var(--panel);
-  display:flex;flex-direction:column;gap:6px;
-  z-index:100;overflow-y:auto;
-  scrollbar-width:none;
+
+/* ── BOTTOM BAR ── */
+#bottomBar{
+  position:fixed;bottom:0;left:0;right:0;height:30px;z-index:200;
+  background:rgba(4,6,14,0.95);backdrop-filter:blur(12px);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:0;padding:0 10px;
 }
-#leftPanel::-webkit-scrollbar{display:none;}
+.bb-mode-btn{
+  background:transparent;border:none;border-radius:4px;
+  color:var(--muted);padding:3px 10px;font-size:10px;
+  font-family:'Inter',system-ui;cursor:pointer;transition:all 0.15s;
+}
+.bb-mode-btn.active,.bb-mode-btn:hover{background:rgba(45,212,191,0.1);color:var(--accent);}
+#bb-div{width:1px;height:18px;background:var(--border);margin:0 6px;}
+#bb-hint{font-size:9px;color:rgba(100,116,139,0.5);flex:1;text-align:center;}
+#bb-global{font-size:9px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;}
+
+/* ── LEFT PANEL ── */
+#leftPanel{
+  position:fixed;top:44px;left:0;bottom:30px;
+  width:210px;
+  display:flex;flex-direction:column;
+  z-index:100;background:rgba(4,6,14,0.92);
+  backdrop-filter:blur(14px);
+  border-right:1px solid var(--border);
+}
+/* left panel tab nav */
+#lp-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
+.lp-tab{
+  flex:1;padding:8px 0;font-size:9px;font-weight:700;letter-spacing:1.5px;
+  text-transform:uppercase;text-align:center;color:var(--muted);
+  background:transparent;border:none;cursor:pointer;
+  border-bottom:2px solid transparent;transition:all 0.15s;
+  font-family:'Inter',system-ui;
+}
+.lp-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+#lp-content{flex:1;overflow-y:auto;scrollbar-width:none;padding:8px;}
+#lp-content::-webkit-scrollbar{display:none;}
 
 .card{
   background:var(--bg);backdrop-filter:blur(14px);
@@ -126,28 +204,96 @@ body{background:#000;font-family:'Inter',system-ui,sans-serif;overflow:hidden;co
 
 /* ── RIGHT INTEL PANEL ── */
 #intelPanel{
-  position:absolute;top:52px;right:12px;
-  width:220px;z-index:100;
-  display:flex;flex-direction:column;gap:6px;
-  transition:transform 0.28s,opacity 0.28s;
+  position:fixed;top:44px;right:0;bottom:30px;
+  width:252px;z-index:100;
+  display:flex;flex-direction:column;
+  background:rgba(4,6,14,0.92);backdrop-filter:blur(14px);
+  border-left:1px solid var(--border);
+  transition:transform 0.25s;
 }
-#intelPanel.hidden{transform:translateX(240px);opacity:0;pointer-events:none;}
-.clock-text{font-size:10px;font-family:'Courier New',monospace;color:var(--muted);line-height:1.8;}
+#intelPanel.hidden{transform:translateX(252px);}
+#ip-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
+.ip-tab{
+  flex:1;padding:8px 0;font-size:9px;font-weight:700;letter-spacing:1px;
+  text-transform:uppercase;text-align:center;color:var(--muted);
+  background:transparent;border:none;cursor:pointer;
+  border-bottom:2px solid transparent;transition:all 0.15s;
+  font-family:'Inter',system-ui;
+}
+.ip-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.ip-pane{display:none;flex:1;overflow-y:auto;scrollbar-width:none;padding:10px 10px;}
+.ip-pane::-webkit-scrollbar{display:none;}
+.ip-pane.active{display:block;}
 
 #toggleIntel{
-  position:absolute;top:52px;right:12px;z-index:101;
-  width:32px;height:32px;border-radius:7px;
-  background:var(--bg);backdrop-filter:blur(14px);
-  border:1px solid var(--border);cursor:pointer;
-  pointer-events:all;display:flex;align-items:center;
-  justify-content:center;color:var(--muted);font-size:15px;
-  transition:color 0.2s;
+  position:fixed;top:52px;right:252px;z-index:201;
+  width:20px;height:40px;border-radius:6px 0 0 6px;
+  background:rgba(4,6,14,0.9);backdrop-filter:blur(14px);
+  border:1px solid var(--border);border-right:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted);font-size:10px;transition:right 0.25s,color 0.15s;
 }
 #toggleIntel:hover{color:var(--text);}
-#intelPanel:not(.hidden) ~ #toggleIntel{right:244px;}
+#intelPanel.hidden ~ #toggleIntel{right:0;border-radius:6px 0 0 6px;}
 
-.t-name{font-size:13px;font-weight:600;color:var(--text);display:block;margin-bottom:5px;}
+.t-name{font-size:12px;font-weight:600;color:var(--text);display:block;margin-bottom:5px;}
 #targetInfo{font-size:11px;color:var(--muted);line-height:1.85;}
+
+/* intel panel inner cards */
+.ip-section{margin-bottom:10px;}
+.ip-hdr{font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:6px;}
+.ip-row{display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px;}
+.ip-label{color:var(--muted);}
+.ip-val{font-weight:600;font-variant-numeric:tabular-nums;}
+.news-item{margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.04);}
+.news-title{font-size:10px;color:var(--text);line-height:1.4;margin-bottom:3px;cursor:pointer;}
+.news-title:hover{color:var(--accent);}
+.news-meta{display:flex;gap:5px;flex-wrap:wrap;}
+.news-badge{font-size:8px;padding:1px 5px;border-radius:3px;font-weight:600;}
+.news-src{background:rgba(45,212,191,0.1);color:var(--accent);}
+.news-time{background:rgba(255,255,255,0.05);color:var(--muted);}
+.news-neg{background:rgba(239,68,68,0.1);color:#f87171;}
+.news-pos{background:rgba(34,197,94,0.1);color:#4ade80;}
+.eq-item{margin-bottom:5px;padding:5px 8px;border-radius:5px;border-left:2px solid;}
+.eq-mag{font-size:13px;font-weight:700;}
+.eq-place{font-size:9px;color:var(--muted);margin-top:1px;}
+.kp-bar-wrap{height:8px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;margin:6px 0;}
+.kp-bar{height:100%;border-radius:4px;transition:width 0.5s;}
+.space-alert{font-size:9px;padding:5px 7px;border-radius:5px;
+  background:rgba(239,68,68,0.08);border-left:2px solid #ef4444;
+  color:var(--muted);margin-bottom:4px;line-height:1.4;}
+
+.t-name{font-size:12px;font-weight:600;color:var(--text);display:block;margin-bottom:5px;}
+
+/* markets in left panel */
+.mkt-row{display:flex;align-items:center;justify-content:space-between;
+  padding:4px 6px;border-radius:5px;margin-bottom:2px;cursor:default;}
+.mkt-row:hover{background:rgba(255,255,255,0.03);}
+.mkt-sym{font-size:10px;font-weight:700;color:var(--text);}
+.mkt-price{font-size:10px;font-variant-numeric:tabular-nums;color:var(--text);}
+.mkt-chg{font-size:9px;font-weight:700;font-variant-numeric:tabular-nums;}
+.up{color:#22c55e;}.dn{color:#ef4444;}
+.mkt-divider{font-size:8px;font-weight:700;letter-spacing:2px;color:var(--muted);
+  text-transform:uppercase;margin:8px 0 4px;padding-left:4px;}
+#qm-clock{font-size:11px;font-family:'Courier New',monospace;color:var(--accent);
+  text-align:center;padding:8px;background:rgba(45,212,191,0.06);
+  border-radius:6px;margin-bottom:8px;}
+
+/* god HUD overlay */
+#godHUD{
+  display:none;position:fixed;top:52px;left:218px;z-index:150;
+  background:rgba(4,6,14,0.88);backdrop-filter:blur(10px);
+  border:1px solid rgba(239,68,68,0.3);border-radius:8px;
+  padding:10px 14px;min-width:120px;
+}
+#godHUD.on{display:block;}
+.ghud-title{font-size:8px;font-weight:700;letter-spacing:2px;color:#f87171;
+  text-transform:uppercase;margin-bottom:8px;}
+.ghud-row{display:flex;justify-content:space-between;gap:16px;
+  font-size:11px;margin-bottom:3px;}
+.ghud-label{color:rgba(248,113,113,0.6);}
+.ghud-val{font-weight:700;color:#f87171;font-variant-numeric:tabular-nums;}
 
 /* ── OVERLAYS ── */
 #ol-scan{position:absolute;inset:0;pointer-events:none;display:none;
@@ -275,19 +421,40 @@ body{background:#000;font-family:'Inter',system-ui,sans-serif;overflow:hidden;co
 
 <div id="cesiumContainer"></div>
 
-<!-- ── TOP BAR ── -->
-<div id="topbar">
-  <div class="logo">WorldView</div>
-  <div class="coord-pill">
+<!-- ── FULL-WIDTH HEADER ── -->
+<div id="hdr">
+  <div id="hdr-logo">
+    <div class="live-dot"></div>
+    WORLDVIEW
+  </div>
+  <div id="hdr-stats">
+    <div class="hstat"><span class="hstat-ico">✈</span><span class="hstat-num" id="hs-ac">—</span></div>
+    <div class="hstat"><span class="hstat-ico">⛵</span><span class="hstat-num" id="hs-ship">—</span></div>
+    <div class="hstat"><span class="hstat-ico">🛰️</span><span class="hstat-num" id="hs-sat">—</span></div>
+    <div class="hstat"><span class="hstat-ico">🌍</span><span class="hstat-num" id="hs-eq">—</span><span style="font-size:9px;color:var(--muted)">EQ</span></div>
+    <div id="hdr-threat">⚡ <span id="hs-threat">—</span><span style="font-size:9px;color:var(--muted)">/10</span></div>
+    <div id="hdr-kp">☀️ Kp<span id="hs-kp">—</span></div>
+  </div>
+  <div id="hdr-ticker"><div id="ticker-inner"></div></div>
+  <div id="hdr-coords">
     <span id="coordDisplay">—</span>
     <span id="altDisplay">—</span>
   </div>
-  <div id="modeTag">◈ Standard</div>
+  <div id="modeTag">◈ Normal</div>
+  <div id="hdr-clock"><span id="utc-clock">—</span></div>
 </div>
 
 <!-- ── LEFT PANEL ── -->
 <div id="leftPanel">
+<div id="lp-tabs">
+  <button class="lp-tab active" onclick="lpTab('map')">🌐 MAP</button>
+  <button class="lp-tab" onclick="lpTab('mkt')">📊 MKT</button>
+  <button class="lp-tab" onclick="lpTab('sig')">📈 SIG</button>
+</div>
+<div id="lp-content">
 
+<!-- MAP TAB -->
+<div id="lp-map">
   <!-- DISPLAY -->
   <div class="card">
     <div class="card-hdr">Display</div>
@@ -460,25 +627,103 @@ body{background:#000;font-family:'Inter',system-ui,sans-serif;overflow:hidden;co
     </div>
   </div>
 
+</div><!-- end lp-map -->
+
+<!-- MKT TAB -->
+<div id="lp-mkt" style="display:none;">
+  <div id="qm-clock">MKT —:—:—</div>
+  <div class="mkt-divider">Equities</div>
+  <div id="mkt-stocks"></div>
+  <div class="mkt-divider">Crypto</div>
+  <div id="mkt-crypto"></div>
+  <div style="margin-top:10px;font-size:9px;color:rgba(100,116,139,0.4);text-align:center;">Yahoo Finance · CoinGecko · 1min delay</div>
 </div>
 
-<!-- ── RIGHT INTEL PANEL ── -->
+<!-- SIG TAB -->
+<div id="lp-sig" style="display:none;">
+  <div class="ip-hdr" style="margin-bottom:8px;">Signal Intelligence</div>
+  <div id="sig-list">
+    <div style="font-size:10px;color:var(--muted);padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:6px;">
+      <span style="color:#22c55e;font-weight:700;">● LONG</span> &nbsp;NVDA &nbsp;<span style="color:var(--muted)">RSI 58 · MACD+</span>
+    </div>
+    <div style="font-size:10px;color:var(--muted);padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:6px;">
+      <span style="color:#ef4444;font-weight:700;">● SHORT</span> &nbsp;SPY &nbsp;<span style="color:var(--muted)">RSI 71 · Overbought</span>
+    </div>
+    <div style="font-size:10px;color:var(--muted);padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:6px;">
+      <span style="color:#fbbf24;font-weight:700;">● WATCH</span> &nbsp;BTC &nbsp;<span style="color:var(--muted)">Key support 68k</span>
+    </div>
+    <div style="font-size:10px;color:var(--muted);padding:6px 0;">
+      <span style="color:#22c55e;font-weight:700;">● LONG</span> &nbsp;ETH &nbsp;<span style="color:var(--muted)">Accumulation zone</span>
+    </div>
+  </div>
+  <div style="margin-top:12px;font-size:9px;color:rgba(100,116,139,0.4);text-align:center;">Demo signals · not financial advice</div>
+</div>
+
+</div><!-- end lp-content -->
+</div><!-- end leftPanel -->
+
+<!-- ── RIGHT INTEL PANEL (tabbed) ── -->
 <div id="intelPanel">
-  <div class="card">
-    <div class="card-hdr">Selected Target</div>
-    <div id="targetInfo" style="color:var(--muted);font-size:11px;">Click any object on the globe</div>
+  <div id="ip-tabs">
+    <button class="ip-tab active" onclick="ipTab('target')">🎯</button>
+    <button class="ip-tab" onclick="ipTab('space')">☀️</button>
+    <button class="ip-tab" onclick="ipTab('events')">🌍</button>
+    <button class="ip-tab" onclick="ipTab('news')">📰</button>
   </div>
-  <div class="card">
-    <div id="clock" class="clock-text"></div>
+  <!-- TARGET -->
+  <div class="ip-pane active" id="ip-target">
+    <div class="ip-hdr">Selected Target</div>
+    <div id="targetInfo" style="color:var(--muted);font-size:11px;">Click any entity on the globe</div>
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:10px;">
+      <div class="ip-hdr">Feed Status</div>
+      <div class="ip-row"><span class="ip-label">Aircraft</span><span class="ip-val" id="aircraftCount">—</span></div>
+      <div class="ip-row"><span class="ip-label">Satellites</span><span class="ip-val" id="satelliteCount">—</span></div>
+      <div class="ip-row"><span class="ip-label">Updated</span><span class="ip-val" id="lastUpdate" style="font-size:9px;color:var(--muted)">—</span></div>
+    </div>
   </div>
-  <div class="card">
-    <div class="card-hdr">Feed Status</div>
-    <div class="sr-row"><span class="sr-label">Aircraft</span><span class="sr-val" id="aircraftCount" style="font-size:11px;">—</span></div>
-    <div class="sr-row"><span class="sr-label">Satellites</span><span class="sr-val" id="satelliteCount" style="font-size:11px;">—</span></div>
-    <div class="sr-row"><span class="sr-label">Last update</span><span class="sr-val" id="lastUpdate" style="font-size:10px;color:var(--muted);">—</span></div>
+  <!-- SPACE WEATHER -->
+  <div class="ip-pane" id="ip-space">
+    <div class="ip-hdr">Space Weather — NOAA SWPC</div>
+    <div class="ip-row"><span class="ip-label">Kp Index</span><span class="ip-val" id="sw-kp">—</span></div>
+    <div class="ip-row"><span class="ip-label">Status</span><span class="ip-val" id="sw-status">—</span></div>
+    <div class="kp-bar-wrap"><div class="kp-bar" id="sw-bar" style="width:0%;background:#22c55e;"></div></div>
+    <div id="sw-alerts" style="margin-top:8px;"></div>
+  </div>
+  <!-- EVENTS -->
+  <div class="ip-pane" id="ip-events">
+    <div class="ip-hdr">M5+ Earthquakes (24h)</div>
+    <div id="eq-list"></div>
+    <div class="ip-hdr" style="margin-top:10px;">EONET Natural Events</div>
+    <div id="eonet-list"></div>
+  </div>
+  <!-- NEWS -->
+  <div class="ip-pane" id="ip-news">
+    <div class="ip-hdr">GDELT Crisis Events</div>
+    <div id="gdelt-list"></div>
+    <div class="ip-hdr" style="margin-top:10px;">RSS — World Headlines</div>
+    <div id="rss-list"></div>
   </div>
 </div>
-<button id="toggleIntel" onclick="toggleIntelPanel()">⊞</button>
+<button id="toggleIntel" onclick="toggleIntelPanel()">‹</button>
+
+<!-- ── GOD HUD ── -->
+<div id="godHUD">
+  <div class="ghud-title">◈ GOD VIEW</div>
+  <div class="ghud-row"><span class="ghud-label">✈</span><span class="ghud-val" id="gh-ac">—</span></div>
+  <div class="ghud-row"><span class="ghud-label">🛰️</span><span class="ghud-val" id="gh-sat">—</span></div>
+  <div class="ghud-row"><span class="ghud-label">⚓</span><span class="ghud-val" id="gh-ship">—</span></div>
+  <div class="ghud-row"><span class="ghud-label">📷</span><span class="ghud-val" id="gh-cctv">—</span></div>
+  <div class="ghud-row"><span class="ghud-label">🌍</span><span class="ghud-val" id="gh-eq">—</span></div>
+</div>
+
+<!-- ── BOTTOM BAR ── -->
+<div id="bottomBar">
+  <button class="bb-mode-btn active" id="bb-3d" onclick="setGlobeMode('3d')">🌍 3D Globe</button>
+  <button class="bb-mode-btn" id="bb-2d" onclick="setGlobeMode('2d')">🗺️ 2D Map</button>
+  <div id="bb-div"></div>
+  <div id="bb-hint">1-6:mode · G:god · S:sat feeds · C:cam feeds · Esc:close · click entity for intel</div>
+  <div id="bb-global"></div>
+</div>
 
 <!-- Overlays -->
 <div id="ol-scan"></div>
@@ -1252,6 +1497,7 @@ function toggleGodMode(){
   if(godModeOn){
     btn.classList.add('god-on');btn.textContent='⚡ GOD MODE ON';
     reticle.style.display='block';status.style.display='block';
+    document.getElementById('godHUD').classList.add('on');
     Object.values(aircraftMap).forEach(e=>{if(e.billboard)e.billboard.color=Cesium.Color.RED;});
     Object.values(vesselMap).forEach(e=>{if(e.billboard)e.billboard.color=Cesium.Color.fromCssColorString('#ff6600');});
     const n=Object.keys(aircraftMap).length+Object.keys(vesselMap).length+Object.keys(satelliteMap).length;
@@ -1259,6 +1505,7 @@ function toggleGodMode(){
   }else{
     btn.classList.remove('god-on');btn.textContent='⚡ God Mode';
     reticle.style.display='none';status.style.display='none';
+    document.getElementById('godHUD').classList.remove('on');
     Object.values(aircraftMap).forEach(e=>{if(e.billboard)e.billboard.color=Cesium.Color.WHITE;});
     Object.values(vesselMap).forEach(e=>{if(e.billboard)e.billboard.color=Cesium.Color.WHITE;});
   }
@@ -1271,8 +1518,8 @@ function toggleIntelPanel(){
   intelOpen=!intelOpen;
   const p=document.getElementById('intelPanel');
   const b=document.getElementById('toggleIntel');
-  if(intelOpen){p.classList.remove('hidden');b.style.right='244px';b.textContent='⊞';}
-  else{p.classList.add('hidden');b.style.right='12px';b.textContent='⊟';}
+  if(intelOpen){p.classList.remove('hidden');b.style.right='252px';b.textContent='›';}
+  else{p.classList.add('hidden');b.style.right='0';b.textContent='‹';}
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1380,18 +1627,29 @@ function startHUDUpdates(){
   viewer.scene.postRender.addEventListener(()=>{
     const c=viewer.scene.camera.positionCartographic;
     if(!c)return;
-    const lon=Cesium.Math.toDegrees(c.longitude).toFixed(4);
-    const lat=Cesium.Math.toDegrees(c.latitude).toFixed(4);
+    const lon=Cesium.Math.toDegrees(c.longitude).toFixed(3);
+    const lat=Cesium.Math.toDegrees(c.latitude).toFixed(3);
     const alt=c.height;
-    document.getElementById('coordDisplay').textContent=`${lat}, ${lon}`;
-    document.getElementById('altDisplay').textContent=alt>=1000?(alt/1000).toFixed(1)+' km':Math.round(alt)+' m';
+    document.getElementById('coordDisplay').textContent=`${lat}° ${lon}°`;
+    document.getElementById('altDisplay').textContent=alt>=1000?(alt/1000).toFixed(1)+'km':Math.round(alt)+'m';
   });
   setInterval(()=>{
     const n=new Date();
-    document.getElementById('clock').innerHTML=
-      `<span style="color:var(--muted);font-size:9px">UTC</span> ${n.toUTCString().split(' ')[4]}<br>`+
-      `<span style="color:var(--muted);font-size:9px">LOCAL</span> ${n.toLocaleTimeString()}<br>`+
-      `<span style="color:var(--muted);font-size:9px">DATE</span> ${n.toISOString().split('T')[0]}`;
+    const utc=n.toUTCString().replace('GMT','UTC');
+    document.getElementById('utc-clock').textContent=utc.substring(0,25);
+    updateQMClock();
+    // update god HUD
+    if(godModeOn){
+      document.getElementById('gh-ac').textContent=Object.keys(aircraftMap).length;
+      document.getElementById('gh-sat').textContent=Object.keys(satelliteMap).length;
+      document.getElementById('gh-ship').textContent=Object.keys(vesselMap).length;
+      document.getElementById('gh-cctv').textContent=cctvEntities.length;
+      document.getElementById('gh-eq').textContent=quakeEntities.length;
+    }
+    // update header stats
+    document.getElementById('hs-ac').textContent=Object.keys(aircraftMap).length||'—';
+    document.getElementById('hs-ship').textContent=Object.keys(vesselMap).length||'—';
+    document.getElementById('hs-sat').textContent=Object.keys(satelliteMap).length||'—';
   },1000);
 }
 
@@ -1493,7 +1751,10 @@ async function fetchEarthquakes(){
       tlAddEvent({time,label:`M${mag.toFixed(1)} ${place.substring(0,30)}`,color:col,icon:'🔴',type:'quake'});
     });
     document.getElementById('sr-quake').textContent=feats.length;
+    document.getElementById('hs-eq').textContent=feats.length;
     notify(`🔴 ${feats.length} earthquakes loaded (24h)`);
+    setTimeout(renderEQList,500);
+    computeThreat();
   }catch(e){console.warn('[USGS]',e);}
 }
 
@@ -1556,6 +1817,8 @@ async function fetchEONET(){
     });
     document.getElementById('sr-fire').textContent=fireCount;
     notify(`🔥 ${(d.events||[]).length} EONET events loaded`);
+    setTimeout(renderEONETList,500);
+    computeThreat();
   }catch(e){console.warn('[EONET]',e);}
 }
 
@@ -2045,6 +2308,297 @@ function flyToView(lat, lon, alt){
 }
 
 // ═══════════════════════════════════════════════════════════════
+// UI TABS
+// ═══════════════════════════════════════════════════════════════
+function lpTab(name){
+  ['map','mkt','sig'].forEach(t=>{
+    document.getElementById('lp-'+t).style.display=t===name?'block':'none';
+  });
+  document.querySelectorAll('.lp-tab').forEach((b,i)=>{
+    b.classList.toggle('active',['map','mkt','sig'][i]===name);
+  });
+}
+function ipTab(name){
+  document.querySelectorAll('.ip-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('ip-'+name).classList.add('active');
+  document.querySelectorAll('.ip-tab').forEach((b,i)=>{
+    b.classList.toggle('active',['target','space','events','news'][i]===name);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GLOBE MODE
+// ═══════════════════════════════════════════════════════════════
+function setGlobeMode(mode){
+  document.getElementById('bb-3d').classList.toggle('active',mode==='3d');
+  document.getElementById('bb-2d').classList.toggle('active',mode==='2d');
+  if(mode==='2d')viewer.scene.morphTo2D(1.5);
+  else viewer.scene.morphTo3D(1.5);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// THREAT LEVEL
+// ═══════════════════════════════════════════════════════════════
+let currentThreat=1.0, currentKp=0;
+function computeThreat(){
+  let t=1.0;
+  t+=Math.min(currentKp*0.3,2.0);
+  t+=Math.min(quakeEntities.length/15,2.0);
+  t+=Math.min(acledEntities.length/80,3.0);
+  t+=Math.min(CONFLICT_ZONES.length*0.08,1.5);
+  t=parseFloat(Math.min(10,Math.max(0,t)).toFixed(1));
+  currentThreat=t;
+  const el=document.getElementById('hs-threat');
+  const hdr=document.getElementById('hdr-threat');
+  if(el)el.textContent=t;
+  const col=t<3?'#22c55e':t<5?'#fbbf24':t<7?'#f97316':'#ef4444';
+  if(hdr){hdr.style.color=col;hdr.style.borderRadius='4px';hdr.style.background=col+'18';}
+  document.getElementById('bb-global').textContent=`🌍 ${quakeEntities.length} EQ · ☀️ Kp${currentKp} · ⚡ Threat ${t}/10`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SPACE WEATHER — NOAA SWPC
+// ═══════════════════════════════════════════════════════════════
+async function fetchSpaceWeather(){
+  try{
+    const [kpRes,alertRes]=await Promise.allSettled([
+      fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json',{signal:AbortSignal.timeout(8000)}),
+      fetch('https://services.swpc.noaa.gov/products/alerts.json',{signal:AbortSignal.timeout(8000)}),
+    ]);
+    if(kpRes.status==='fulfilled'&&kpRes.value.ok){
+      const d=await kpRes.value.json();
+      const latest=d[d.length-1];
+      const kp=parseFloat(latest[1])||0;
+      currentKp=kp;
+      const kpLabel=kp<3?'QUIET':kp<4?'UNSETTLED':kp<5?'ACTIVE':kp<6?'MINOR STORM':'STORM';
+      const kpCol=kp<3?'#22c55e':kp<4?'#fbbf24':kp<5?'#f97316':'#ef4444';
+      document.getElementById('hs-kp').textContent=kp.toFixed(1);
+      const kpEl=document.getElementById('hdr-kp');
+      if(kpEl)kpEl.style.color=kpCol;
+      document.getElementById('sw-kp').textContent=kp.toFixed(1);
+      document.getElementById('sw-status').innerHTML=`<span style="color:${kpCol};font-weight:700">${kpLabel}</span>`;
+      const bar=document.getElementById('sw-bar');
+      if(bar){bar.style.width=(kp/9*100)+'%';bar.style.background=kpCol;}
+      computeThreat();
+    }
+    if(alertRes.status==='fulfilled'&&alertRes.value.ok){
+      const alerts=await alertRes.value.json();
+      const container=document.getElementById('sw-alerts');
+      if(container){
+        if(!alerts.length){
+          container.innerHTML='<div class="ip-hdr" style="margin-top:6px;">Alerts</div><div style="font-size:10px;color:#22c55e;">🟢 Nominal space environment. No alerts.</div>';
+        }else{
+          container.innerHTML='<div class="ip-hdr" style="margin-top:6px;">Alerts</div>'+
+            alerts.slice(0,5).map(a=>`<div class="space-alert">${(a.message||'').substring(0,120)}</div>`).join('');
+        }
+      }
+    }
+  }catch(e){console.warn('[SWPC]',e);}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MARKETS — stocks + crypto ticker
+// ═══════════════════════════════════════════════════════════════
+const STOCKS=['NVDA','AAPL','QQQ','SPY','MSFT'];
+const CRYPTO_IDS={bitcoin:'BTC',ethereum:'ETH',solana:'SOL',ripple:'XRP',binancecoin:'BNB'};
+let marketData={};
+
+async function fetchQuote(sym){
+  try{
+    const url=`https://query2.finance.yahoo.com/v8/finance/chart/${sym}?interval=1m&range=1d`;
+    const proxy='https://api.allorigins.win/get?url='+encodeURIComponent(url);
+    const r=await fetch(proxy,{signal:AbortSignal.timeout(10000)});
+    const j=await r.json();
+    const d=JSON.parse(j.contents);
+    const meta=d.chart.result[0].meta;
+    const price=meta.regularMarketPrice;
+    const prev=meta.chartPreviousClose||meta.regularMarketPrice;
+    const pct=((price-prev)/prev*100);
+    return{sym,price,pct,ok:true};
+  }catch(e){return{sym,price:null,pct:0,ok:false};}
+}
+
+async function fetchMarkets(){
+  const results=await Promise.allSettled(STOCKS.map(s=>fetchQuote(s)));
+  const items=[];
+  results.forEach(r=>{
+    if(r.status==='fulfilled'&&r.value.ok){
+      const{sym,price,pct}=r.value;
+      marketData[sym]={price,pct};
+      items.push({sym,price,pct});
+      renderMktRow('mkt-stocks',sym,price,pct);
+    }
+  });
+  rebuildTicker();
+}
+
+async function fetchCrypto(){
+  try{
+    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ripple,binancecoin&vs_currencies=usd&include_24hr_change=true',{signal:AbortSignal.timeout(10000)});
+    const d=await r.json();
+    Object.entries(d).forEach(([id,v])=>{
+      const sym=CRYPTO_IDS[id]+'-USD';
+      const price=v.usd;
+      const pct=v.usd_24h_change||0;
+      marketData[sym]={price,pct};
+      renderMktRow('mkt-crypto',sym,price,pct);
+    });
+    rebuildTicker();
+  }catch(e){console.warn('[CoinGecko]',e);}
+}
+
+function renderMktRow(containerId,sym,price,pct){
+  const container=document.getElementById(containerId);
+  if(!container)return;
+  let el=document.getElementById('mkt-'+sym);
+  if(!el){el=document.createElement('div');el.id='mkt-'+sym;el.className='mkt-row';container.appendChild(el);}
+  const up=pct>=0;
+  const priceStr=price>=100?price.toFixed(2):price>=1?price.toFixed(3):price.toFixed(4);
+  el.innerHTML=`<span class="mkt-sym">${sym}</span><span class="mkt-price">$${priceStr}</span><span class="mkt-chg ${up?'up':'dn'}">${up?'▲':'▼'}${Math.abs(pct).toFixed(2)}%</span>`;
+}
+
+function rebuildTicker(){
+  const entries=Object.entries(marketData);
+  if(!entries.length)return;
+  // double for seamless loop
+  const html=entries.map(([sym,{price,pct}])=>{
+    const up=pct>=0;
+    const priceStr=price>=100?price.toFixed(2):price>=1?price.toFixed(3):price.toFixed(4);
+    return `<div class="tick-item"><span class="tick-sym">${sym}</span><span class="tick-price">$${priceStr}</span><span class="${up?'tick-up':'tick-dn'}">${up?'▲':'▼'}${Math.abs(pct).toFixed(2)}%</span></div>`;
+  }).join('');
+  const inner=document.getElementById('ticker-inner');
+  if(inner)inner.innerHTML=html+html; // doubled for seamless scroll
+}
+
+// market clock (countdown to close/open)
+function updateQMClock(){
+  const now=new Date();
+  const et=new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'}));
+  const h=et.getHours(),m=et.getMinutes(),s=et.getSeconds();
+  const totalSec=h*3600+m*60+s;
+  const openSec=9*3600+30*60, closeSec=16*3600;
+  const wday=et.getDay();
+  const isWeekend=wday===0||wday===6;
+  let label,secLeft;
+  if(isWeekend){label='MKT CLOSED (WKD)';secLeft=0;}
+  else if(totalSec<openSec){label='MKT OPENS';secLeft=openSec-totalSec;}
+  else if(totalSec<closeSec){label='MKT CLOSES';secLeft=closeSec-totalSec;}
+  else{label='MKT CLOSED';secLeft=0;}
+  const hh=Math.floor(secLeft/3600),mm=Math.floor((secLeft%3600)/60),ss=secLeft%60;
+  const el=document.getElementById('qm-clock');
+  if(el)el.textContent=secLeft>0?`${label} ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`:`${label}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GDELT + RSS NEWS
+// ═══════════════════════════════════════════════════════════════
+async function fetchGDELT(){
+  try{
+    const url='https://api.gdeltproject.org/api/v2/doc/doc?query=war+conflict+military+crisis&mode=ArtList&maxrecords=20&format=json';
+    const r=await fetch(url,{signal:AbortSignal.timeout(12000)});
+    const d=await r.json();
+    const articles=(d.articles||[]);
+    const container=document.getElementById('gdelt-list');
+    if(!container)return;
+    container.innerHTML=articles.slice(0,12).map(a=>{
+      const tone=parseFloat(a.tone)||0;
+      const toneClass=tone<-2?'news-neg':tone>2?'news-pos':'';
+      const timeStr=a.seendate?a.seendate.substring(8,12)+'Z':'';
+      return `<div class="news-item">
+        <div class="news-title" onclick="window.open('${a.url||'#'}','_blank')">${(a.title||'').substring(0,90)}</div>
+        <div class="news-meta">
+          <span class="news-badge news-src">${(a.domain||'').substring(0,20)}</span>
+          ${timeStr?`<span class="news-badge news-time">${timeStr}</span>`:''}
+          ${toneClass?`<span class="news-badge ${toneClass}">${tone.toFixed(1)}</span>`:''}
+        </div>
+      </div>`;
+    }).join('');
+    ipTab('news');// switch to news tab to show
+  }catch(e){console.warn('[GDELT]',e);}
+}
+
+async function fetchRSS(){
+  const feeds=[
+    'https://feeds.bbci.co.uk/news/world/rss.xml',
+    'https://rss.dw.com/rdf/rss-en-world',
+  ];
+  const items=[];
+  for(const feed of feeds){
+    try{
+      const proxy='https://api.allorigins.win/get?url='+encodeURIComponent(feed);
+      const r=await fetch(proxy,{signal:AbortSignal.timeout(10000)});
+      const j=await r.json();
+      const xml=new DOMParser().parseFromString(j.contents,'text/xml');
+      const src=xml.querySelector('channel>title')?.textContent||new URL(feed).hostname;
+      xml.querySelectorAll('item').forEach(item=>{
+        const title=item.querySelector('title')?.textContent||'';
+        const link=item.querySelector('link')?.textContent||'#';
+        const pub=item.querySelector('pubDate')?.textContent||'';
+        if(title)items.push({title,link,pub,src});
+      });
+    }catch(e){}
+  }
+  const container=document.getElementById('rss-list');
+  if(!container||!items.length)return;
+  // sort by date desc
+  items.sort((a,b)=>new Date(b.pub)-new Date(a.pub));
+  container.innerHTML=items.slice(0,15).map(it=>{
+    const t=new Date(it.pub);
+    const timeStr=isNaN(t)?'':t.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+    return `<div class="news-item">
+      <div class="news-title" onclick="window.open('${it.link}','_blank')">${it.title.substring(0,85)}</div>
+      <div class="news-meta">
+        <span class="news-badge news-src">${it.src.substring(0,16)}</span>
+        ${timeStr?`<span class="news-badge news-time">${timeStr}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// render M5+ earthquakes in events tab
+function renderEQList(){
+  const container=document.getElementById('eq-list');
+  if(!container)return;
+  const big=quakeEntities
+    .filter(e=>e.properties?.mag?.getValue()>=5)
+    .sort((a,b)=>(b.properties?.mag?.getValue()||0)-(a.properties?.mag?.getValue()||0))
+    .slice(0,10);
+  if(!big.length){container.innerHTML='<div style="font-size:10px;color:var(--muted)">No M5+ events in last 24h</div>';return;}
+  container.innerHTML=big.map(e=>{
+    const mag=e.properties.mag.getValue()||0;
+    const place=e.properties.place?.getValue()||'Unknown';
+    const depth=e.properties.depth?.getValue()||0;
+    const col=mag>=7?'#ef4444':mag>=6?'#f97316':mag>=5?'#fbbf24':'#84cc16';
+    return `<div class="eq-item" style="border-color:${col};background:${col}0a">
+      <div style="display:flex;gap:8px;align-items:baseline">
+        <span class="eq-mag" style="color:${col}">M${mag.toFixed(1)}</span>
+        <span class="eq-place">${depth}km deep</span>
+      </div>
+      <div class="eq-place">${place}</div>
+    </div>`;
+  }).join('');
+  // also update hdr
+  document.getElementById('hs-eq').textContent=quakeEntities.length;
+}
+
+// render EONET events in events tab
+function renderEONETList(){
+  const container=document.getElementById('eonet-list');
+  if(!container)return;
+  const evs=eonetEntities.slice(0,8);
+  if(!evs.length){container.innerHTML='<div style="font-size:10px;color:var(--muted)">Loading...</div>';return;}
+  container.innerHTML=evs.map(e=>{
+    const cat=e.properties?.catId?.getValue()||'';
+    const ico=EONET_ICO[cat]||'⚡';
+    const col=EONET_COL[cat]||'#94a3b8';
+    const title=e.properties?.title?.getValue()||e.name||'';
+    return `<div class="eq-item" style="border-color:${col};background:${col}0a">
+      <div class="eq-mag" style="color:${col};font-size:11px">${ico} ${title.substring(0,35)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
 // GOOGLE 3D TILES (optional)
 // ═══════════════════════════════════════════════════════════════
 async function tryLoad3DTiles(){
@@ -2111,6 +2665,18 @@ function hideLoader(){
 
   // ACLED conflict data (if key set)
   if(getACLEDKey()&&getACLEDEmail())fetchACLED().catch(console.warn);
+
+  // Markets + space weather + news
+  fetchSpaceWeather().catch(console.warn);
+  setInterval(fetchSpaceWeather,10*60*1000);
+
+  fetchMarkets().catch(console.warn);
+  fetchCrypto().catch(console.warn);
+  setInterval(()=>{fetchMarkets().catch(()=>{});fetchCrypto().catch(()=>{});},60*1000);
+
+  fetchGDELT().catch(console.warn);
+  fetchRSS().catch(console.warn);
+  setInterval(()=>{fetchGDELT().catch(()=>{});fetchRSS().catch(()=>{});},5*60*1000);
 
   tryLoad3DTiles().catch(()=>{});
 })();
