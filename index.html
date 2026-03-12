@@ -379,9 +379,22 @@ body{background:#000;font-family:'Inter',system-ui,sans-serif;overflow:hidden;co
       <span class="tog-label"><span>📷</span> CCTV Nodes</span>
       <input type="checkbox" checked onchange="toggleLayer('cctv',this.checked)"><div class="sw"></div>
     </label>
+    <label class="tog">
+      <span class="tog-label"><span>🔴</span> Earthquakes</span>
+      <input type="checkbox" checked onchange="toggleLayer('quakes',this.checked)"><div class="sw"></div>
+    </label>
+    <label class="tog">
+      <span class="tog-label"><span>🔥</span> Active Fires</span>
+      <input type="checkbox" checked onchange="toggleLayer('fires',this.checked)"><div class="sw"></div>
+    </label>
+    <label class="tog">
+      <span class="tog-label"><span>🌀</span> EONET Events</span>
+      <input type="checkbox" checked onchange="toggleLayer('eonet',this.checked)"><div class="sw"></div>
+    </label>
     <div style="border-top:1px solid var(--border);margin-top:7px;padding-top:7px;display:flex;flex-direction:column;gap:3px;">
       <button class="disp-btn" onclick="openCamGrid('sat')">🛰️ Satellite Feeds</button>
       <button class="disp-btn" onclick="openCamGrid('cam')">📷 Camera Feeds</button>
+      <button class="disp-btn" style="color:var(--accent)" onclick="openSettings()">⚙️ API Keys</button>
     </div>
   </div>
 
@@ -415,6 +428,14 @@ body{background:#000;font-family:'Inter',system-ui,sans-serif;overflow:hidden;co
     <div class="sr-row">
       <span class="sr-label">📷 CCTV nodes</span>
       <span class="sr-val" id="sr-cctv" style="color:var(--c-cctv)">—</span>
+    </div>
+    <div class="sr-row">
+      <span class="sr-label">🔴 Earthquakes</span>
+      <span class="sr-val" id="sr-quake" style="color:#f87171">—</span>
+    </div>
+    <div class="sr-row">
+      <span class="sr-label">🔥 Active fires</span>
+      <span class="sr-val" id="sr-fire" style="color:#fb923c">—</span>
     </div>
     <div id="god-status" style="display:none;margin-top:6px;padding-top:6px;
       border-top:1px solid rgba(239,68,68,0.2);
@@ -478,6 +499,52 @@ body{background:#000;font-family:'Inter',system-ui,sans-serif;overflow:hidden;co
     <line x1="73" y1="60" x2="120" y2="60" stroke="#f87171" stroke-width="1"/>
   </svg>
 </div>
+
+<!-- ── SETTINGS MODAL ── -->
+<div id="settingsModal" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:22px;width:360px;max-width:90vw;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:16px;">⚙️ API Keys</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.7;">
+      Free keys unlock live camera feeds.<br>
+      <b style="color:var(--text)">Windy Webcams</b> — <a href="https://api.windy.com" target="_blank" style="color:var(--accent)">api.windy.com</a> (free, 1000 req/day, 100k+ cameras globally)
+    </div>
+    <label style="display:block;font-size:10px;color:var(--muted);margin-bottom:4px;">WINDY API KEY</label>
+    <input id="windyKeyInput" type="text" placeholder="paste your Windy API key here"
+      style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px 10px;font-size:11px;font-family:'Courier New',monospace;outline:none;margin-bottom:14px;">
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="closeSettings()" style="background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);padding:7px 16px;font-size:11px;cursor:pointer;font-family:'Inter',system-ui;">Cancel</button>
+      <button onclick="saveSettings()" style="background:rgba(45,212,191,0.15);border:1px solid var(--accent);border-radius:6px;color:var(--accent);padding:7px 16px;font-size:11px;cursor:pointer;font-family:'Inter',system-ui;">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TIMELINE SCRUBBER ── -->
+<div id="timeline" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:rgba(6,8,18,0.96);backdrop-filter:blur(14px);
+  border-top:1px solid var(--border);padding:10px 16px;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <button id="tl-play" onclick="tlTogglePlay()" style="background:rgba(45,212,191,0.12);border:1px solid var(--accent);border-radius:6px;color:var(--accent);width:30px;height:30px;font-size:14px;cursor:pointer;flex-shrink:0;">▶</button>
+    <div style="font-size:10px;color:var(--muted);font-family:'Courier New',monospace;min-width:140px;" id="tl-time">—</div>
+    <input id="tl-scrub" type="range" min="0" max="1440" value="0" oninput="tlScrub(this.value)"
+      style="flex:1;accent-color:var(--accent);height:3px;cursor:pointer;">
+    <select id="tl-speed" onchange="tlSetSpeed(this.value)" style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--muted);padding:4px 8px;font-size:10px;cursor:pointer;">
+      <option value="1">1×</option><option value="10">10×</option>
+      <option value="60" selected>60×</option><option value="300">300×</option>
+    </select>
+    <button onclick="hideTimeline()" style="background:transparent;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 4px;">✕</button>
+  </div>
+  <div id="tl-events" style="display:flex;gap:4px;margin-top:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;"></div>
+</div>
+
+<!-- replay open button (bottom right) -->
+<button id="tl-open-btn" onclick="showTimeline()" title="Open 24h OSINT replay"
+  style="position:fixed;bottom:16px;right:16px;z-index:190;
+  background:var(--bg);backdrop-filter:blur(14px);
+  border:1px solid var(--border);border-radius:8px;
+  color:var(--muted);padding:8px 14px;font-size:11px;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;gap:6px;">
+  ⏱ OSINT Replay
+</button>
 
 <script>
 // ═══════════════════════════════════════════════════════════════
@@ -592,6 +659,7 @@ const layers = {
   mil_ac:true, vip_ac:true, civ_ac:true,
   war_ships:true, oil_ships:true, cargo_ships:true, pass_ships:true,
   satellites:true, warzones:true, vectors:true, cctv:true,
+  quakes:true, fires:true, eonet:true,
 };
 
 // ── SVG icon helper ─────────────────────────────────────────────
@@ -1235,6 +1303,22 @@ function initClickHandler(){
       html=`<span class="t-name">🚗 Vehicle</span>
         Road &nbsp;&nbsp; ${p.road?.getValue()||'Unknown'}<br>
         Status &nbsp; In Transit`;
+    }else if(t==='quake'){
+      const mag=p.mag?.getValue()||0;
+      const col=mag>=6?'#ef4444':mag>=5?'#f97316':mag>=4?'#fbbf24':'#84cc16';
+      html=`<span class="t-name">🔴 Earthquake</span>
+        <span style="color:${col};font-size:14px;font-weight:700">M${mag.toFixed(1)}</span><br><br>
+        Location &nbsp; ${p.place?.getValue()||'Unknown'}<br>
+        Depth &nbsp;&nbsp;&nbsp;&nbsp; ${p.depth?.getValue()||0} km<br>
+        Time &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${new Date(p.time?.getValue()||Date.now()).toUTCString()}<br>
+        Source &nbsp;&nbsp;&nbsp; USGS`;
+    }else if(t==='eonet'){
+      const cat=p.catId?.getValue()||'event';
+      const ico=EONET_ICO[cat]||'⚡';
+      html=`<span class="t-name">${ico} ${cat.replace(/([A-Z])/g,' $1').trim()}</span>
+        <b style="color:var(--text)">${p.title?.getValue()||e.name}</b><br><br>
+        Source &nbsp;&nbsp; NASA EONET<br>
+        Status &nbsp;&nbsp; Open / Active`;
     }
     if(html){
       document.getElementById('targetInfo').innerHTML=html;
@@ -1270,6 +1354,7 @@ function startHUDUpdates(){
 // ═══════════════════════════════════════════════════════════════
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
+    if(document.getElementById('settingsModal').style.display==='flex'){closeSettings();return;}
     if(document.getElementById('camGrid').classList.contains('open')){closeCamGrid();return;}
   }
   const k={
@@ -1292,6 +1377,265 @@ function notify(text,red=false){
   el.textContent=text;
   document.getElementById('topbar').parentElement.appendChild(el);
   setTimeout(()=>el.remove(),3500);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════════════
+function openSettings(){
+  document.getElementById('windyKeyInput').value=localStorage.getItem('windy_key')||'';
+  const m=document.getElementById('settingsModal');
+  m.style.display='flex';
+}
+function closeSettings(){document.getElementById('settingsModal').style.display='none';}
+function saveSettings(){
+  const k=document.getElementById('windyKeyInput').value.trim();
+  if(k)localStorage.setItem('windy_key',k);else localStorage.removeItem('windy_key');
+  closeSettings();
+  notify(k?'⚙️ Windy key saved — camera feeds enabled':'⚙️ Windy key cleared');
+}
+function getWindyKey(){return localStorage.getItem('windy_key')||'';}
+
+// ═══════════════════════════════════════════════════════════════
+// USGS EARTHQUAKES
+// ═══════════════════════════════════════════════════════════════
+let quakeEntities=[];
+async function fetchEarthquakes(){
+  try{
+    const r=await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson',{signal:AbortSignal.timeout(10000)});
+    const d=await r.json();
+    quakeEntities.forEach(e=>viewer.entities.remove(e));quakeEntities=[];
+    const feats=(d.features||[]).filter(f=>f.geometry&&f.properties.mag>0);
+    feats.forEach(f=>{
+      const[lon,lat,depth]=f.geometry.coordinates;
+      const mag=f.properties.mag||0;
+      const place=f.properties.place||'Unknown';
+      const time=new Date(f.properties.time);
+      const r=Math.max(20000,mag*mag*30000);
+      const col=mag>=6?'#ef4444':mag>=5?'#f97316':mag>=4?'#fbbf24':'#84cc16';
+      const e=viewer.entities.add({
+        id:'quake_'+f.id,name:`M${mag.toFixed(1)} ${place}`,
+        position:Cesium.Cartesian3.fromDegrees(lon,lat,0),
+        show:layers.quakes,
+        ellipse:{
+          semiMajorAxis:r,semiMinorAxis:r,
+          material:Cesium.Color.fromCssColorString(col).withAlpha(0.18),
+          outline:true,outlineColor:Cesium.Color.fromCssColorString(col).withAlpha(0.6),
+          outlineWidth:1,heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+        },
+        label:{
+          text:`M${mag.toFixed(1)}`,font:'10px Inter,system-ui',
+          fillColor:Cesium.Color.fromCssColorString(col),
+          outlineColor:Cesium.Color.BLACK,outlineWidth:2,
+          style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+          disableDepthTestDistance:5e6,
+          scaleByDistance:new Cesium.NearFarScalar(1e4,1.0,8e6,0.0),
+          heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+        },
+        properties:{entityType:'quake',mag,place,depth:Math.round(depth),time:time.toISOString()}
+      });
+      quakeEntities.push(e);
+      // add to timeline
+      tlAddEvent({time,label:`M${mag.toFixed(1)} ${place.substring(0,30)}`,color:col,icon:'🔴',type:'quake'});
+    });
+    document.getElementById('sr-quake').textContent=feats.length;
+    notify(`🔴 ${feats.length} earthquakes loaded (24h)`);
+  }catch(e){console.warn('[USGS]',e);}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NASA EONET — natural events (fires, volcanoes, storms, floods)
+// ═══════════════════════════════════════════════════════════════
+let eonetEntities=[];
+const EONET_ICO={
+  wildfires:'🔥',volcanoes:'🌋',severeStorms:'🌀',
+  floods:'💧',seaAndLakeIce:'🧊',drought:'☀️',
+  dustAndHaze:'💨',earthquakes:'🔴',landslides:'⛰️',
+};
+const EONET_COL={
+  wildfires:'#fb923c',volcanoes:'#ef4444',severeStorms:'#60a5fa',
+  floods:'#22d3ee',seaAndLakeIce:'#bfdbfe',drought:'#fde68a',
+  dustAndHaze:'#d4a574',earthquakes:'#f87171',landslides:'#a78bfa',
+};
+async function fetchEONET(){
+  try{
+    const r=await fetch('https://eonet.gsfc.nasa.gov/api/v3/events?days=7&status=open',{signal:AbortSignal.timeout(10000)});
+    const d=await r.json();
+    eonetEntities.forEach(e=>viewer.entities.remove(e));eonetEntities=[];
+    let fireCount=0;
+    (d.events||[]).forEach(ev=>{
+      if(!ev.geometry||!ev.geometry.length)return;
+      const geo=ev.geometry[ev.geometry.length-1];
+      if(!geo.coordinates)return;
+      const [lon,lat]=Array.isArray(geo.coordinates[0])?geo.coordinates[0]:geo.coordinates;
+      const catId=ev.categories?.[0]?.id||'';
+      const ico=EONET_ICO[catId]||'⚡';
+      const col=EONET_COL[catId]||'#94a3b8';
+      const isFire=catId==='wildfires';
+      if(isFire)fireCount++;
+      const time=new Date(geo.date||Date.now());
+      const layer=isFire?'fires':'eonet';
+      const e=viewer.entities.add({
+        id:'eonet_'+ev.id,name:ev.title,
+        position:Cesium.Cartesian3.fromDegrees(lon,lat,0),
+        show:layers[layer],
+        billboard:{
+          image:svgIcon(ico,20),width:20,height:20,
+          heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+          scaleByDistance:new Cesium.NearFarScalar(5e4,1.4,8e6,0.4),
+          disableDepthTestDistance:5e6,
+        },
+        label:{
+          text:ev.title.substring(0,18),font:'9px Inter,system-ui',
+          fillColor:Cesium.Color.fromCssColorString(col),
+          outlineColor:Cesium.Color.BLACK,outlineWidth:2,
+          style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+          pixelOffset:new Cesium.Cartesian2(12,0),
+          heightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+          scaleByDistance:new Cesium.NearFarScalar(5e4,1.0,3e6,0.0),
+          disableDepthTestDistance:5e6,
+        },
+        properties:{entityType:'eonet',catId,title:ev.title,source:'NASA EONET',layer}
+      });
+      eonetEntities.push(e);
+      tlAddEvent({time,label:ev.title.substring(0,40),color:col,icon:ico,type:'eonet'});
+    });
+    document.getElementById('sr-fire').textContent=fireCount;
+    notify(`🔥 ${(d.events||[]).length} EONET events loaded`);
+  }catch(e){console.warn('[EONET]',e);}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ISS LIVE POSITION (wheretheiss.at — no API key)
+// ═══════════════════════════════════════════════════════════════
+let issEntity=null;
+async function fetchISSPosition(){
+  try{
+    const r=await fetch('https://api.wheretheiss.at/v1/satellites/25544',{signal:AbortSignal.timeout(5000)});
+    const d=await r.json();
+    const {latitude:lat,longitude:lon,altitude}=d;
+    const alt=altitude*1000;
+    if(issEntity){
+      issEntity.position=Cesium.Cartesian3.fromDegrees(lon,lat,alt);
+      issEntity.label.text='🛰️ ISS LIVE';
+    }else{
+      issEntity=viewer.entities.add({
+        id:'iss_live',name:'ISS — Live',
+        position:Cesium.Cartesian3.fromDegrees(lon,lat,alt),
+        show:layers.satellites,
+        billboard:{
+          image:svgIcon('🛰️',22),width:22,height:22,
+          scaleByDistance:new Cesium.NearFarScalar(5e5,1.8,2e7,0.5),
+          disableDepthTestDistance:2e7,
+          color:Cesium.Color.fromCssColorString('#00ffcc'),
+        },
+        label:{
+          text:'🛰️ ISS LIVE',font:'11px Inter,system-ui',fontWeight:'bold',
+          fillColor:Cesium.Color.fromCssColorString('#00ffcc'),
+          outlineColor:Cesium.Color.BLACK,outlineWidth:2,
+          style:Cesium.LabelStyle.FILL_AND_OUTLINE,
+          pixelOffset:new Cesium.Cartesian2(14,-2),
+          scaleByDistance:new Cesium.NearFarScalar(5e5,1.0,1e7,0.0),
+          disableDepthTestDistance:2e7,
+        },
+        properties:{entityType:'satellite',satName:'ISS (Live)',altitude:Math.round(alt/1000),isMilitary:false,isISS:true}
+      });
+    }
+  }catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LAYER TOGGLE additions
+// ═══════════════════════════════════════════════════════════════
+const _origToggle=toggleLayer;
+function toggleLayer(name,on){
+  layers[name]=on;
+  if(name==='quakes'){quakeEntities.forEach(e=>e.show=on);}
+  else if(name==='fires'){eonetEntities.forEach(e=>{if(e.properties?.layer?.getValue()==='fires')e.show=on;});}
+  else if(name==='eonet'){eonetEntities.forEach(e=>{if(e.properties?.layer?.getValue()==='eonet')e.show=on;});}
+  else{_origToggle(name,on);}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WINDY WEBCAM INTEGRATION
+// ═══════════════════════════════════════════════════════════════
+async function fetchWindyCams(lat,lon,radiusKm=50){
+  const key=getWindyKey();
+  if(!key)return null;
+  try{
+    const url=`https://webcams.windy.com/webcams/api/v3/webcams?lang=en&nearby=${lat},${lon},${radiusKm}&limit=8&fields=webcamId,title,status,player`;
+    const r=await fetch(url,{headers:{'x-windy-api-key':key},signal:AbortSignal.timeout(8000)});
+    if(!r.ok)return null;
+    const d=await r.json();
+    return d.webcams||[];
+  }catch(e){return null;}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 24H OSINT REPLAY TIMELINE
+// ═══════════════════════════════════════════════════════════════
+let tlEvents=[],tlPlaying=false,tlMinute=0,tlSpeed=60,tlTimer=null;
+const TL_START=new Date(Date.now()-24*60*60*1000); // 24h ago
+
+function tlAddEvent({time,label,color,icon,type}){
+  const minutesAgo=(Date.now()-time.getTime())/60000;
+  const minFromStart=(24*60)-minutesAgo;
+  if(minFromStart<0||minFromStart>1440)return;
+  tlEvents.push({min:Math.round(minFromStart),label,color,icon,type});
+  tlRenderEventBar();
+}
+
+function tlRenderEventBar(){
+  const bar=document.getElementById('tl-events');
+  if(!bar)return;
+  bar.innerHTML='';
+  tlEvents.slice(-40).forEach(ev=>{
+    const pip=document.createElement('div');
+    pip.title=ev.label;
+    pip.style.cssText=`flex-shrink:0;cursor:pointer;font-size:11px;padding:2px 4px;
+      border-radius:4px;border:1px solid ${ev.color}44;background:${ev.color}18;
+      color:${ev.color};white-space:nowrap;font-size:9px;max-width:120px;
+      overflow:hidden;text-overflow:ellipsis;`;
+    pip.textContent=ev.icon+' '+ev.label.substring(0,16);
+    pip.onclick=()=>tlScrub(ev.min);
+    bar.appendChild(pip);
+  });
+}
+
+function tlScrub(val){
+  tlMinute=parseInt(val);
+  document.getElementById('tl-scrub').value=tlMinute;
+  const t=new Date(TL_START.getTime()+tlMinute*60000);
+  document.getElementById('tl-time').textContent=
+    t.toUTCString().replace('GMT','UTC').substring(0,25);
+}
+
+function tlTogglePlay(){
+  tlPlaying=!tlPlaying;
+  document.getElementById('tl-play').textContent=tlPlaying?'⏸':'▶';
+  if(tlPlaying)tlTick();else{clearTimeout(tlTimer);}
+}
+
+function tlTick(){
+  if(!tlPlaying)return;
+  tlMinute=Math.min(1440,tlMinute+1);
+  tlScrub(tlMinute);
+  if(tlMinute>=1440){tlPlaying=false;document.getElementById('tl-play').textContent='▶';return;}
+  // real ms per tick = 60000ms / speed
+  tlTimer=setTimeout(tlTick, Math.max(50, 60000/tlSpeed));
+}
+
+function tlSetSpeed(v){tlSpeed=parseInt(v);}
+
+function showTimeline(){
+  document.getElementById('timeline').style.display='block';
+  document.getElementById('tl-open-btn').style.display='none';
+  tlScrub(0);
+}
+function hideTimeline(){
+  document.getElementById('timeline').style.display='none';
+  document.getElementById('tl-open-btn').style.display='flex';
+  if(tlPlaying)tlTogglePlay();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1369,38 +1713,97 @@ function renderCamGrid(){
   const visible = feeds.slice(start, start + CAM_PER_PAGE);
   const grid = document.getElementById('cgGrid');
   grid.innerHTML = '';
+  const hasWindy = !!getWindyKey();
+  const isSat = camGridTab==='sat';
+
   visible.forEach((cam, idx)=>{
     const n = start + idx + 1;
     const tile = document.createElement('div');
     tile.className = 'cam-tile';
+    tile.dataset.lat = cam.lat??0;
+    tile.dataset.lon = cam.lon??0;
+    tile.dataset.idx = n;
     const hasStream = !!(cam.url);
-    const isSat = camGridTab==='sat';
-    const flyAlt = isSat ? 2000000 : 500;
+    const flyAlt = isSat ? 2000000 : 400;
     const flyLat = cam.lat ?? 0;
     const flyLon = cam.lon ?? 0;
+
     tile.innerHTML = `
       <div class="cam-tile-hdr">
         <div>
           <div class="cam-tile-name">${isSat?'🛰️':'📷'} ${cam.name}</div>
           <div class="cam-tile-loc">${cam.loc}</div>
         </div>
-        <div class="${hasStream?'cam-dot-live':'cam-dot-off'}" title="${hasStream?'Live stream':'Satellite view'}"></div>
+        <div class="${hasStream||hasWindy?'cam-dot-live':'cam-dot-off'}"></div>
       </div>
-      <div class="cam-body">
+      <div class="cam-body" id="camBody${n}">
         <div class="cam-idx">CAM ${String(n).padStart(2,'0')}</div>
         ${hasStream
           ? `<iframe src="${cam.url}" allowfullscreen allow="autoplay;encrypted-media" loading="lazy"></iframe>`
-          : `<div class="cam-fly">
-               <div class="cam-fly-ico">${isSat?'🛰️':'📷'}</div>
-               <div class="cam-fly-loc">${cam.loc}</div>
-               <button class="cam-fly-btn" onclick="flyToView(${flyLat},${flyLon},${flyAlt})">
-                 ${isSat?'🌍 Globe View':'🎯 Satellite View'}
-               </button>
-             </div>`
+          : hasWindy && !isSat
+            ? `<div class="cam-fly" id="camFly${n}">
+                 <div class="cam-fly-ico">📡</div>
+                 <div class="cam-fly-loc">Loading Windy cameras…</div>
+               </div>`
+            : `<div class="cam-fly">
+                 <div class="cam-fly-ico">${isSat?'🛰️':'📷'}</div>
+                 <div class="cam-fly-loc">${cam.loc}</div>
+                 ${!isSat && !hasWindy
+                   ? `<div style="font-size:9px;color:var(--muted);text-align:center;max-width:150px;margin-bottom:6px;">Add Windy API key for live feeds</div>`
+                   : ''}
+                 <button class="cam-fly-btn" onclick="flyToView(${flyLat},${flyLon},${flyAlt})">
+                   ${isSat?'🌍 Globe View':'🎯 Satellite View'}
+                 </button>
+               </div>`
         }
       </div>
     `;
     grid.appendChild(tile);
+
+    // async load Windy cameras for this tile
+    if(hasWindy && !isSat && !hasStream && cam.lat!=null){
+      fetchWindyCams(cam.lat, cam.lon, 80).then(cams=>{
+        const el=document.getElementById('camFly'+n);
+        if(!el)return;
+        if(!cams||!cams.length){
+          el.innerHTML=`<div class="cam-fly-ico">📷</div>
+            <div class="cam-fly-loc">${cam.loc}</div>
+            <div style="font-size:9px;color:var(--muted)">No cameras found nearby</div>
+            <button class="cam-fly-btn" onclick="flyToView(${flyLat},${flyLon},${flyAlt})">🎯 Satellite View</button>`;
+          return;
+        }
+        // pick first active cam
+        const pick = cams.find(c=>c.status==='active')||cams[0];
+        const embedUrl = pick.player?.embed;
+        if(embedUrl){
+          el.parentElement.innerHTML=`
+            <div class="cam-idx">CAM ${String(n).padStart(2,'0')}</div>
+            <iframe src="${embedUrl}" allowfullscreen allow="autoplay;encrypted-media" loading="lazy" style="width:100%;height:100%;border:none;"></iframe>
+          `;
+          // show camera switcher if multiple
+          if(cams.length>1){
+            const sw=document.createElement('div');
+            sw.style.cssText='position:absolute;bottom:4px;right:4px;display:flex;gap:2px;';
+            cams.slice(0,4).forEach((c2,i)=>{
+              const b=document.createElement('button');
+              b.style.cssText='background:rgba(0,0,0,0.6);border:1px solid var(--border);border-radius:4px;color:var(--muted);padding:2px 6px;font-size:9px;cursor:pointer;';
+              b.textContent=i+1;
+              b.onclick=()=>{
+                const ef=c2.player?.embed;
+                if(!ef)return;
+                el.parentElement.querySelector('iframe').src=ef;
+              };
+              sw.appendChild(b);
+            });
+            el.parentElement.appendChild(sw);
+          }
+        }else{
+          el.innerHTML=`<div class="cam-fly-ico">📷</div>
+            <div class="cam-fly-loc">${pick.title||cam.loc}</div>
+            <button class="cam-fly-btn" onclick="flyToView(${flyLat},${flyLon},${flyAlt})">🎯 Satellite View</button>`;
+        }
+      });
+    }
   });
 }
 
@@ -1467,6 +1870,16 @@ function hideLoader(){
 
   fetchAircraft().catch(console.warn);
   setInterval(fetchAircraft,CFG.FLIGHT_UPDATE_MS);
+
+  // OSINT data layers
+  fetchEarthquakes().catch(console.warn);
+  setInterval(fetchEarthquakes, 10*60*1000); // refresh every 10 min
+
+  fetchEONET().catch(console.warn);
+  setInterval(fetchEONET, 15*60*1000); // refresh every 15 min
+
+  fetchISSPosition().catch(()=>{});
+  setInterval(fetchISSPosition, 5000); // update ISS every 5s
 
   tryLoad3DTiles().catch(()=>{});
 })();
